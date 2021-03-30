@@ -38,6 +38,7 @@ db.sequelize = sequelize;
 
 //models
 db.user = sequelize.import("./models/user");
+db.product = sequelize.import("./models/product/product");
 
 //Define through tables for associations later
 
@@ -55,6 +56,8 @@ db.createAssoc = createAssoc;
 const syncDB = async () => {
   //tables
   await db.user.sync();
+  await db.product.sync();
+
   //the rest of the table
   await db.sequelize.sync();
 };

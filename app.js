@@ -11,7 +11,9 @@ db.createAssoc(); //create associations
 db.sync(); //sync each table in order
 
 //controllers
-const user = require("./controllers/user-controller");
+const user = require("./controllers/users/user-controller");
+const product = require("./controllers/products/product-controller");
+const cloudinary = require("./controllers/cloudinary-controller");
 
 //headers
 app.use(require("./middleware/headers"));
@@ -33,9 +35,11 @@ app.use(express.json());
 app.use("/user", user);
 
 ////////////////////////////////////////////////
-//Protected Routes
+//User Protected Routes
 ////////////////////////////////////////////////
 app.use(require("./middleware/validate-session"));
+app.use("/product", product);
+app.use("/cloudinary", cloudinary);
 
 const PORT = process.env.PORT;
 

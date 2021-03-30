@@ -1,12 +1,12 @@
 require("dotenv");
 const router = require("express").Router();
-const User = require("../db").user;
+const User = require("../../db").user;
 
 //security
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
-const validateSession = require("../middleware/validate-session");
+const validateSession = require("../../middleware/validate-session");
 
 //email
 const nodemailer = require("nodemailer");
