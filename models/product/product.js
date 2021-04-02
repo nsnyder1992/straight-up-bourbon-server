@@ -17,6 +17,13 @@ module.exports = (sequelize, DataTypes) => {
     cost: {
       type: DataTypes.DECIMAL,
     },
+    photoUrl: {
+      type: DataTypes.STRING,
+    },
+    stripeProductId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   });
 
   return Product;

@@ -39,6 +39,8 @@ db.sequelize = sequelize;
 //models
 db.user = sequelize.import("./models/user");
 db.product = sequelize.import("./models/product/product");
+db.stock = sequelize.import("./models/product/product-stock");
+db.descriptions = sequelize.import("./models/product/product-descriptions");
 
 //Define through tables for associations later
 
@@ -46,7 +48,11 @@ db.product = sequelize.import("./models/product/product");
 //For a better understanding of relationships go to:
 //https://database.guide/the-3-types-of-relationships-in-database-design/
 const createAssoc = async () => {
-  //do nothing
+  await db.product.hasMany(db.stock);
+  await db.stock.belongsTo(db.product);
+
+  await db.product.hasMany(db.descriptions);
+  await db.descriptions.belongsTo(db.product);
 };
 
 //add createAssoc function to db object
@@ -57,6 +63,8 @@ const syncDB = async () => {
   //tables
   await db.user.sync();
   await db.product.sync();
+  await db.stock.sync();
+  await db.descriptions.sync();
 
   //the rest of the table
   await db.sequelize.sync();
