@@ -4,46 +4,6 @@ const Product = require("../../db").product;
 const Stock = require("../../db").stock;
 const Descriptions = require("../../db").descriptions;
 
-//is admin?
-const validateSessionAdmin = require("../../middleware/validate-session-admin");
-
-////////////////////////////////////////////////
-// CREATE PRODUCT
-////////////////////////////////////////////////
-router.post("/create", validateSessionAdmin, async (req, res) => {
-  try {
-    const product = await Product.create({
-      name: req.body.name,
-      type: req.body.type,
-      color: req.body.color,
-      description_main: req.body.description_main,
-      cost: Math.floor(req.body.cost * 100),
-      photoUrl: req.body.description_main,
-      stripeProductId: req.body.stripeProductId,
-    });
-
-    for (point of req.body.description_points) {
-      await Descriptions.create({
-        productId: product.id,
-        description: point,
-      });
-    }
-
-    for (key of Object.keys(req.body.stock)) {
-      await Stock.create({
-        productId: product.id,
-        size: key,
-        numItems: req.body.stock[key],
-      });
-    }
-
-    res.status(200).json({ product });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ err });
-  }
-});
-
 ////////////////////////////////////////////////
 // GET PRODUCTS (PAGINATED)
 ////////////////////////////////////////////////
@@ -57,6 +17,7 @@ router.get("/:page/:limit", async (req, res) => {
   const query = {
     limit: limit,
     offset: offset,
+    order: [["createdAt", "ASC"]],
     include: [
       {
         model: Stock,
@@ -76,8 +37,7 @@ router.get("/:page/:limit", async (req, res) => {
       const restRes = { products, total: count };
       res.status(200).json(restRes);
     })
-    .then((err) => res.status(500).json(err))
-    .catch((err) => console.log(err));
+    .catch((err) => res.status(500).json(err));
 });
 
 ////////////////////////////////////////////////
@@ -104,8 +64,49 @@ router.get("/:id", async (req, res) => {
       const restRes = { products };
       res.status(200).json(restRes);
     })
-    .then((err) => res.status(500).json(err))
-    .catch((err) => console.log(err));
+    .catch((err) => res.status(500).json(err));
+});
+
+//is admin?
+const validateSessionAdmin = require("../../middleware/validate-session-admin");
+
+////////////////////////////////////////////////
+// CREATE PRODUCT
+////////////////////////////////////////////////
+router.post("/create", validateSessionAdmin, async (req, res) => {
+  try {
+    const product = await Product.create({
+      name: req.body.name,
+      type: req.body.type,
+      color: req.body.color,
+      description_main: req.body.description_main,
+      cost: Math.floor(req.body.cost * 100),
+      photoUrl: req.body.photoUrl,
+      stripeProductId: req.body.stripeProductId,
+    });
+
+    console.log(req.body.description_points);
+
+    for (point of req.body.description_points) {
+      await Descriptions.create({
+        productId: product.id,
+        description: point,
+      });
+    }
+
+    for (key of Object.keys(req.body.stock)) {
+      await Stock.create({
+        productId: product.id,
+        size: key,
+        numItems: req.body.stock[key],
+      });
+    }
+
+    res.status(200).json({ product });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
+  }
 });
 
 ////////////////////////////////////////////////
@@ -119,7 +120,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       color: req.body.color,
       description_main: req.body.description_main,
       cost: Math.floor(req.body.cost * 100),
-      photoUrl: req.body.description_main,
+      photoUrl: req.body.photoUrl,
       stripeProductId: req.body.stripeProductId,
     };
 
@@ -128,9 +129,16 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
     //update Product
     const updatedProduct = await Product.update(postEntry, query);
 
+    await Descriptions.destroy({
+      where: { productId: req.params.id },
+    });
+
+    console.log(req.body.description_points);
+
     for (id of Object.keys(req.body.description_points)) {
+      console.log(id);
       const description = await Descriptions.findOne({
-        where: { id: id, productId: req.params.id },
+        where: { id: parseInt(id), productId: req.params.id },
       });
 
       if (description !== null) {
@@ -147,6 +155,8 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
         });
       }
     }
+
+    await Stock.destroy({ where: { productId: req.params.id } });
 
     for (key of Object.keys(req.body.stock)) {
       const stock = await Stock.findOne({

@@ -4,6 +4,11 @@ const router = require("express").Router();
 //is admin?
 const validateSessionAdmin = require("../middleware/validate-session-admin");
 
+//Cloudinary Constants
+const cloudinary = require("cloudinary");
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
 ////////////////////////////////////////////////
 // CLOUDINARY POST SIGNATURE
 ////////////////////////////////////////////////
