@@ -41,6 +41,7 @@ db.user = sequelize.import("./models/user");
 db.product = sequelize.import("./models/product/product");
 db.stock = sequelize.import("./models/product/product-stock");
 db.descriptions = sequelize.import("./models/product/product-descriptions");
+db.orders = sequelize.import("./models/order/orders");
 
 //Define through tables for associations later
 
@@ -65,6 +66,7 @@ const syncDB = async () => {
   await db.product.sync();
   await db.stock.sync();
   await db.descriptions.sync();
+  await db.orders.sync();
 
   //the rest of the table
   await db.sequelize.sync();

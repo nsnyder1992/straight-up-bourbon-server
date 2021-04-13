@@ -20,9 +20,12 @@ module.exports = (sequelize, DataTypes) => {
     photoUrl: {
       type: DataTypes.STRING,
     },
-    stripeProductId: {
+    stripePriceId: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    numItems: {
+      type: DataTypes.INTEGER,
     },
   });
 

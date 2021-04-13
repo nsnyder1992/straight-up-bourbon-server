@@ -15,6 +15,11 @@ const user = require("./controllers/users/user-controller");
 const product = require("./controllers/products/product-controller");
 const stock = require("./controllers/products/stock-controller");
 const description = require("./controllers/products/description-controller");
+const order = require("./controllers/orders/order-controller");
+
+//aux controllers
+const youtube = require("./controllers/youtube-controller");
+const checkout = require("./controllers/checkout-controller");
 const cloudinary = require("./controllers/cloudinary-controller");
 
 //headers
@@ -28,12 +33,24 @@ app.options("*", (req, res) => {
   });
 });
 
-//use json (enable to get res.body)
-app.use(express.json());
+////////////////////////////////////////////////
+//Exposed Routes (NOT JSON)
+////////////////////////////////////////////////
+
+//use json (enable to get req.body)
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 ////////////////////////////////////////////////
-//Exposed Routes
+//Exposed Routes (JSON)
 ////////////////////////////////////////////////
+app.use("/youtube", youtube);
+app.use("/checkout", checkout);
 app.use("/user", user);
 app.use("/product", product);
 
@@ -44,6 +61,7 @@ app.use(require("./middleware/validate-session"));
 app.use("/product/stock", stock);
 app.use("/product/description", description);
 app.use("/cloudinary", cloudinary);
+app.use("/order", order);
 
 const PORT = process.env.PORT;
 

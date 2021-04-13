@@ -1,8 +1,16 @@
 require("dotenv");
 const router = require("express").Router();
+
+//aux libraries
+const fetch = require("node-fetch");
+
+//models
 const Product = require("../../db").product;
 const Stock = require("../../db").stock;
 const Descriptions = require("../../db").descriptions;
+
+//stripe
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
 ////////////////////////////////////////////////
 // GET PRODUCTS (PAGINATED)
@@ -37,7 +45,10 @@ router.get("/:page/:limit", async (req, res) => {
       const restRes = { products, total: count };
       res.status(200).json(restRes);
     })
-    .catch((err) => res.status(500).json(err));
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json(err);
+    });
 });
 
 ////////////////////////////////////////////////
@@ -75,6 +86,10 @@ const validateSessionAdmin = require("../../middleware/validate-session-admin");
 ////////////////////////////////////////////////
 router.post("/create", validateSessionAdmin, async (req, res) => {
   try {
+    let stripeSizePrice = await createStripePriceIds(req);
+
+    console.log(stripeSizePrice);
+
     const product = await Product.create({
       name: req.body.name,
       type: req.body.type,
@@ -82,10 +97,8 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
       description_main: req.body.description_main,
       cost: Math.floor(req.body.cost * 100),
       photoUrl: req.body.photoUrl,
-      stripeProductId: req.body.stripeProductId,
+      stripePriceId: stripeSizePrice["none"],
     });
-
-    console.log(req.body.description_points);
 
     for (point of req.body.description_points) {
       await Descriptions.create({
@@ -99,6 +112,7 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
         productId: product.id,
         size: key,
         numItems: req.body.stock[key],
+        stripePriceId: stripeSizePrice[key],
       });
     }
 
@@ -121,19 +135,35 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       description_main: req.body.description_main,
       cost: Math.floor(req.body.cost * 100),
       photoUrl: req.body.photoUrl,
-      stripeProductId: req.body.stripeProductId,
     };
 
     const query = { where: { id: req.params.id } };
 
+    const product = await Product.findOne(query);
+
+    //find out if cost changed
+    let costChange =
+      product.cost != Math.floor(req.body.cost * 100) ? true : false;
+
+    console.log(
+      "COST CHANGE: ",
+      costChange,
+      "COST: ",
+      product.cost,
+      "NEW COST: ",
+      Math.floor(req.body.cost * 100)
+    );
+
+    //change in cost create new product and price
+    if (costChange) postEntry.stripePriceId = await createStripePriceId(req);
+
     //update Product
     const updatedProduct = await Product.update(postEntry, query);
 
+    //refresh Description Points
     await Descriptions.destroy({
       where: { productId: req.params.id },
     });
-
-    console.log(req.body.description_points);
 
     for (id of Object.keys(req.body.description_points)) {
       console.log(id);
@@ -156,28 +186,56 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       }
     }
 
-    await Stock.destroy({ where: { productId: req.params.id } });
+    //get product stock
+    let stock = await Stock.findAll({
+      where: { productId: req.params.id },
+    });
 
+    stock = JSON.parse(JSON.stringify(stock));
+
+    let stripePriceIds;
+    if (costChange) {
+      stripePriceIds = await createStripePriceIds(req);
+    }
+
+    //delete stock not in query
+    for (item of stock) {
+      let deleted = true;
+      for (key of Object.keys(req.body.stock)) {
+        if (item.size == key) deleted = false;
+      }
+
+      if (deleted)
+        await Stock.destroy({
+          where: { productId: req.params.id, size: item.size },
+        });
+
+      console.log("DELETED", deleted);
+    }
+
+    //update stock
     for (key of Object.keys(req.body.stock)) {
-      const stock = await Stock.findOne({
+      const item = await Stock.findOne({
         where: { productId: req.params.id, size: key },
       });
 
-      if (stock !== null) {
-        await Stock.update(
-          {
-            productId: req.params.id,
-            size: key,
-            numItems: req.body.stock[key],
-          },
-          { where: { id: stock.id } }
-        );
-      } else {
-        await Stock.create({
-          productId: req.params.id,
-          size: key,
-          numItems: req.body.stock[key],
+      let stockUpdate = {
+        productId: req.params.id,
+        size: key,
+        numItems: req.body.stock[key],
+      };
+
+      if (stripePriceIds) stockUpdate.stripePriceId = stripePriceIds[key];
+
+      if (item) {
+        console.log("--PRODUCT UPDATE-- Item: ", stockUpdate);
+        await Stock.update(stockUpdate, {
+          where: { productId: req.params.id, size: key },
         });
+      } else {
+        console.log("--CREATE NEW STOOCK ITEM-- Item: ", stockUpdate);
+        stockUpdate.stripePriceId = await createStripePriceIdBySize(req, key);
+        await Stock.create(stockUpdate);
       }
     }
 
@@ -189,7 +247,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
 });
 
 ///////////////////////////////////////////////////////////////
-//DELETE Product
+//DELETE PRODUCT
 ///////////////////////////////////////////////////////////////
 router.delete("/:id", validateSessionAdmin, async (req, res) => {
   try {
@@ -209,4 +267,89 @@ router.delete("/:id", validateSessionAdmin, async (req, res) => {
   }
 });
 
+///////////////////////////////////////////////////////////////
+// STRIPE FUNCTIONS
+///////////////////////////////////////////////////////////////
+async function createStripePriceId(req) {
+  const stripeProduct = await stripe.products.create({
+    name: req.body.name,
+    images: [req.body.photoUrl],
+    metadata: {
+      size: "none",
+    },
+  });
+
+  const stripePrice = await stripe.prices.create({
+    product: stripeProduct.id,
+    unit_amount: Math.floor(req.body.cost * 100),
+    currency: "usd",
+  });
+
+  return stripePrice.id;
+}
+
+async function createStripePriceIdBySize(req, size) {
+  const stripeProduct = await stripe.products.create({
+    name: req.body.name,
+    images: [req.body.photoUrl],
+    metadata: {
+      size: size,
+    },
+  });
+
+  const stripePrice = await stripe.prices.create({
+    product: stripeProduct.id,
+    unit_amount: Math.floor(req.body.cost * 100),
+    currency: "usd",
+  });
+
+  return stripePrice.id;
+}
+
+async function createStripePriceIds(req) {
+  let stripeSize = {};
+  let stripeSizePrice = {};
+
+  //setup default pricing
+  const stripeProduct = await stripe.products.create({
+    name: req.body.name,
+    images: [req.body.photoUrl],
+    metadata: {
+      size: "none",
+    },
+  });
+
+  stripeSize["none"] = stripeProduct.id;
+
+  const stripePrice = await stripe.prices.create({
+    product: stripeProduct.id,
+    unit_amount: Math.floor(req.body.cost * 100),
+    currency: "usd",
+  });
+
+  stripeSizePrice["none"] = stripePrice.id;
+
+  //setup specific stripPriceIds for stock sizes
+  for (key of Object.keys(req.body.stock)) {
+    const stripeProduct = await stripe.products.create({
+      name: req.body.name,
+      images: [req.body.photoUrl],
+      metadata: {
+        size: key,
+      },
+    });
+
+    stripeSize[key] = stripeProduct.id;
+
+    const stripePrice = await stripe.prices.create({
+      product: stripeProduct.id,
+      unit_amount: Math.floor(req.body.cost * 100),
+      currency: "usd",
+    });
+
+    stripeSizePrice[key] = stripePrice.id;
+  }
+
+  return stripeSizePrice;
+}
 module.exports = router;
