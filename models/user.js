@@ -24,6 +24,9 @@ module.exports = (sequelize, DataTypes) => {
     resetPasswordExpires: {
       type: DataTypes.DATE,
     },
+    stripeCustomerId: {
+      type: DataTypes.STRING,
+    },
   });
 
   return User;

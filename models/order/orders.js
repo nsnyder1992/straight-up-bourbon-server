@@ -4,11 +4,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    isShipped: {
+    isFulfilled: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
-    isFulfilled: {
+    isShipped: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
@@ -16,10 +16,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
+    isCanceled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+    },
     trackingNumber: {
       type: DataTypes.STRING,
     },
-    shipEnginId: {
+    shipmentId: {
       type: DataTypes.STRING,
     },
   });

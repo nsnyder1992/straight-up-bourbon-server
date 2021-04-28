@@ -16,6 +16,7 @@ const product = require("./controllers/products/product-controller");
 const stock = require("./controllers/products/stock-controller");
 const description = require("./controllers/products/description-controller");
 const order = require("./controllers/orders/order-controller");
+const customerOrders = require("./controllers/orders/customer-orders-controller");
 
 //aux controllers
 const youtube = require("./controllers/youtube-controller");
@@ -47,7 +48,7 @@ app.use(
 );
 
 ////////////////////////////////////////////////
-//Exposed Routes (JSON)
+//Exposed Routes
 ////////////////////////////////////////////////
 app.use("/youtube", youtube);
 app.use("/checkout", checkout);
@@ -62,6 +63,7 @@ app.use("/product/stock", stock);
 app.use("/product/description", description);
 app.use("/cloudinary", cloudinary);
 app.use("/order", order);
+app.use("/customer/order", customerOrders);
 
 const PORT = process.env.PORT;
 

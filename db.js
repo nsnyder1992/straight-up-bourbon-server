@@ -43,17 +43,40 @@ db.stock = sequelize.import("./models/product/product-stock");
 db.descriptions = sequelize.import("./models/product/product-descriptions");
 db.orders = sequelize.import("./models/order/orders");
 
-//Define through tables for associations later
+//Define through tables for M-N associations later
+db.customerOrders = sequelize.define("customer_orders", {
+  //users have orders
+  orderId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: db.orders,
+      key: "id",
+    },
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: db.user,
+      key: "id",
+    },
+  },
+});
 
 //associations
 //For a better understanding of relationships go to:
 //https://database.guide/the-3-types-of-relationships-in-database-design/
 const createAssoc = async () => {
+  //product has stock
   await db.product.hasMany(db.stock);
   await db.stock.belongsTo(db.product);
 
+  //product has descriptions
   await db.product.hasMany(db.descriptions);
   await db.descriptions.belongsTo(db.product);
+
+  //users have orders
+  await db.user.belongsToMany(db.orders, { through: db.customerOrders });
+  await db.orders.belongsToMany(db.user, { through: db.customerOrders });
 };
 
 //add createAssoc function to db object
@@ -67,6 +90,7 @@ const syncDB = async () => {
   await db.stock.sync();
   await db.descriptions.sync();
   await db.orders.sync();
+  await db.customerOrders.sync();
 
   //the rest of the table
   await db.sequelize.sync();

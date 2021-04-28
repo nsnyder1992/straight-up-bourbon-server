@@ -1,20 +1,20 @@
 require("dotenv");
 const router = require("express").Router();
 
-//aux libraries
-const cron = require("node-cron");
-const fetch = require("node-fetch");
-
 //products
 const Product = require("../../db").product;
 const Stock = require("../../db").stock;
 const Orders = require("../../db").orders;
+const CustomerOrders = require("../../db").customerOrders;
 
 //stripe
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
+//email
+const nodemailer = require("nodemailer");
+
 //auth
-//is admin?
+const validateSession = require("../../middleware/validate-session");
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
 
 ////////////////////////////////////////////////
@@ -50,42 +50,51 @@ router.get("/:page/:limit", validateSessionAdmin, async (req, res) => {
 
     res.status(200).json({ orders, count });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ err });
   }
 });
 
 ////////////////////////////////////////////////
-// GET STRIPE SESSION Line ITEMS
+// GET STRIPE SESSION LINE ITEMS
 ////////////////////////////////////////////////
-router.get("/:id", validateSessionAdmin, async (req, res) => {
+router.get("/:id", validateSession, async (req, res) => {
   try {
-    const order = await Orders.findOne({
-      where: { id: req.params.id },
+    const customerOrder = await CustomerOrders.findOne({
+      where: { orderId: req.params.id, userId: req.user.id },
     });
 
-    const session = await stripe.checkout.sessions.retrieve(order.sessionId);
-
-    const items = await stripe.checkout.sessions.listLineItems(
-      order.sessionId,
-      { limit: 25 }
-    );
-
-    for (i in items.data) {
-      let product = await Product.findOne({
-        include: [
-          {
-            model: Stock,
-            where: {
-              stripePriceId: items.data[i].price.id,
-            },
-          },
-        ],
+    if (customerOrder || req.user.isAdmin) {
+      const order = await Orders.findOne({
+        where: { id: req.params.id },
       });
 
-      items.data[i].product = product;
-    }
+      const session = await stripe.checkout.sessions.retrieve(order.sessionId);
 
-    res.status(200).json({ order, session, items });
+      const items = await stripe.checkout.sessions.listLineItems(
+        order.sessionId,
+        { limit: 25 }
+      );
+
+      for (i in items.data) {
+        let product = await Product.findOne({
+          include: [
+            {
+              model: Stock,
+              where: {
+                stripePriceId: items.data[i].price.id,
+              },
+            },
+          ],
+        });
+
+        items.data[i].product = product;
+      }
+
+      res.status(200).json({ order, session, items });
+    } else {
+      res.status(403).json({ auth: "Not Authorized" });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).json({ err });
@@ -135,5 +144,77 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
     res.status(500).json({ err });
   }
 });
+
+////////////////////////////////////////////////
+// CANCEL ORDER
+////////////////////////////////////////////////
+router.put("/cancel/:id", validateSession, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const order = await CustomerOrders.findOne({
+      where: { orderId: id, userId: req.user.id },
+    });
+    let response;
+    if (order) {
+      const order = await Orders.findOne({ where: { id: id } });
+
+      const session = await stripe.checkout.sessions.retrieve(order.sessionId);
+
+      const refund = await stripe.refunds.create({
+        payment_intent: session.payment_intent,
+      });
+
+      response = await Orders.update(
+        { isCanceled: true },
+        { where: { id: id } }
+      );
+
+      emailRefund(req.user, refund.id);
+
+      res.status(200).json({ response, refund });
+    } else {
+      response = "Not Authorized";
+      res.status(403).json(response);
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
+  }
+});
+
+//email refund data
+const emailRefund = (user, refundId) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: "straight-up-bourbon@gmail.com",
+    to: user.email,
+    subject: "Refund on the way",
+    text:
+      "You are recieving this email because you have requested to cancel your order. \n\n" +
+      "You should be receiving your refund within a 3-5 days. Email us back at straight-up-bourbon@gmail.com if you have any further questions\n\n" +
+      `Refund id: ${refundId}\n\n` +
+      "Thanks!\n\n" +
+      "Luke & JP",
+  };
+
+  console.log("sending email");
+
+  transporter.sendMail(mailOptions, (err, response) => {
+    if (err) {
+      console.log("error: ", err);
+    } else {
+      console.log("success: ", response);
+      res.status(200).json("recovery email sent");
+    }
+  });
+};
 
 module.exports = router;

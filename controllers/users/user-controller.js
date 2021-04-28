@@ -1,6 +1,7 @@
 require("dotenv");
 const router = require("express").Router();
 const User = require("../../db").user;
+const CustomerOrders = require("../../db").customerOrders;
 
 //security
 const jwt = require("jsonwebtoken");
@@ -10,6 +11,9 @@ const validateSession = require("../../middleware/validate-session");
 
 //email
 const nodemailer = require("nodemailer");
+
+//stripe
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
 ////////////////////////////////////////////////
 // CREATE USER
@@ -29,6 +33,15 @@ router.post("/signup", (req, res) => {
           .then((firstUser) => (user.isAdmin = true))
           .catch((err) => console.log(err));
       }
+
+      const customer = await stripe.customers.create({
+        email: req.body.email,
+      });
+
+      await User.update(
+        { stripeCustomerId: customer.id },
+        { where: { id: user.id } }
+      );
 
       //sign in user
       let token = jwt.sign(
@@ -196,7 +209,7 @@ router.put("/updatePasswordViaEmail", async (req, res) => {
 });
 
 //////////////////////////////////////////////////////////////////////
-// MAKE USER BY ID
+// MAKE USER ADMIN BY ID
 //////////////////////////////////////////////////////////////////////
 //We use validateSession here to protect the path of unknown users from
 //getting our users data
@@ -211,6 +224,33 @@ router.put("/admin/:id", validateSession, (req, res) => {
           .status(500)
           .json({ err: err, message: "Opps, something went wrong!" })
       );
+  } else {
+    res.status(403).json({ error: "Must be a admin" });
+  }
+});
+
+//////////////////////////////////////////////////////////////////////
+// GET ALL USERS (PAGINATED)
+//////////////////////////////////////////////////////////////////////
+//We use validateSession here to protect the path of unknown users from
+//getting our users data
+router.get("/:page/:limit", validateSession, async (req, res) => {
+  if (req.user.isAdmin) {
+    //setup pagination constants
+    const limit = req.params.limit;
+    const offset = (req.params.page - 1) * limit;
+
+    const count = await User.count();
+
+    const query = {
+      limit: limit,
+      offset: offset,
+      order: [["createdAt", "DESC"]],
+    };
+
+    User.findAll(query)
+      .then((users) => res.status(200).json({ users, count }))
+      .catch((err) => res.status(500).json({ err: err }));
   } else {
     res.status(403).json({ error: "Must be a admin" });
   }
