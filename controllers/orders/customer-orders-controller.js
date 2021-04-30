@@ -29,19 +29,18 @@ router.get("/:page/:limit", async (req, res) => {
 
     const count = await CustomerOrders.count(query);
 
-    query.offset = offset;
-    query.limit = limit;
-
     let userOrders = await CustomerOrders.findAll(query);
     userOrders = JSON.parse(JSON.stringify(userOrders));
 
     let orderIds = [];
     for (let order of userOrders) {
-      orderIds.push(order.id);
+      orderIds.push(order.orderId);
     }
-
+    console.log("ORDERS: ", orderIds);
     const ordersTemp = await Orders.findAll({
       where: { id: orderIds },
+      offset,
+      limit,
       order: [["createdAt", "DESC"]],
     });
 

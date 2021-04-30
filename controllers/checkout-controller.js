@@ -4,7 +4,7 @@ const router = require("express").Router();
 //aux libraries
 const cron = require("node-cron");
 const fetch = require("node-fetch");
-var request = require("request-promise");
+const request = require("request-promise");
 
 //products
 const Stock = require("../db").stock;

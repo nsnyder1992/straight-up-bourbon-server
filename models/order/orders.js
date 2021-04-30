@@ -26,6 +26,9 @@ module.exports = (sequelize, DataTypes) => {
     shipmentId: {
       type: DataTypes.STRING,
     },
+    trackingUrl: {
+      type: DataTypes.STRING,
+    },
   });
 
   return Orders;

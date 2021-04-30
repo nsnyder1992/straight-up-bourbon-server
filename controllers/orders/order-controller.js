@@ -1,5 +1,6 @@
 require("dotenv");
 const router = require("express").Router();
+const request = require("request-promise");
 
 //products
 const Product = require("../../db").product;
@@ -38,8 +39,8 @@ router.get("/:page/:limit", validateSessionAdmin, async (req, res) => {
 
     let orders = [];
     for (order of ordersTemp) {
+      //stripe
       const session = await stripe.checkout.sessions.retrieve(order.sessionId);
-      //   let items;
       const items = await stripe.checkout.sessions.listLineItems(
         order.sessionId,
         { limit: 5 }

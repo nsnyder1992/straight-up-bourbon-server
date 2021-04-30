@@ -17,6 +17,7 @@ const stock = require("./controllers/products/stock-controller");
 const description = require("./controllers/products/description-controller");
 const order = require("./controllers/orders/order-controller");
 const customerOrders = require("./controllers/orders/customer-orders-controller");
+const tracking = require("./controllers/orders/tracking-controller");
 
 //aux controllers
 const youtube = require("./controllers/youtube-controller");
@@ -54,6 +55,7 @@ app.use("/youtube", youtube);
 app.use("/checkout", checkout);
 app.use("/user", user);
 app.use("/product", product);
+app.use("/track", tracking);
 
 ////////////////////////////////////////////////
 //User Protected Routes
