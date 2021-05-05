@@ -1,10 +1,12 @@
-### Straight Up Bourbon Server
+# Straight Up Bourbon Server
 
 This the backend for the website for the Straight Up Bourbon YouTube channel. This project was created using node.js.
 
 ## Major Functionality
 
-1. Users: `~/users`
+1. ### Users:
+
+   `~/users`
 
    - **GET** `/byId/:id`
      - Get user by ID
@@ -23,7 +25,9 @@ This the backend for the website for the Straight Up Bourbon YouTube channel. Th
    - **PUT** `/addmin/:id`
      - Make user and admin
 
-2. Products: `~/product`
+2. ### Products:
+
+   `~/product`
 
    - **GET** `/:id`
      - Get Product by ID
@@ -36,17 +40,23 @@ This the backend for the website for the Straight Up Bourbon YouTube channel. Th
    - **DELETE** `/:id`
      - Delete Product with given descriptions and stock by ID
 
-3. Stock: `~/product/stock`
+3. ### Stock:
+
+   `~/product/stock`
 
    - **DELETE** `/:id`
      - Delete Product Size by ID
 
-4. Product Descriptions: `~/product/description`
+4. ### Product Descriptions:
+
+   `~/product/description`
 
    - **DELETE** `/:id`
      - Delete Product description by ID
 
-5. Orders: `~/order`
+5. ### Orders:
+
+   `~/order`
 
    - **GET** `/:page/:limit`
      - Get all Orders, asscoiated items and stripe session (paginated)
@@ -59,14 +69,18 @@ This the backend for the website for the Straight Up Bourbon YouTube channel. Th
    - **PUT** `/cancel/:id`
      - Cancel Order and refund customer by ID
 
-6. Customer Orders: `~/customer/order`
+6. ### Customer Orders:
+
+   `~/customer/order`
 
    - **GET** `/:page/:limit`
      - Get all User Orders, asscoiated items and stripe session (paginated)
    - **GET** `/:id`
      - Get line items for order from strip session
 
-7. Tracking: `~/track`
+7. ### Tracking:
+
+   `~/track`
 
    - **GET** `/:id/:label`
      - Get Tracking status from ShipEngine by ID and Label
@@ -75,7 +89,9 @@ This the backend for the website for the Straight Up Bourbon YouTube channel. Th
    - **POST** `/:usr/:pwd`
      - Tracking Webhook from ShipEngine to update status on the fly
 
-8. Checkout: `~/checkout`
+8. ### Checkout:
+
+   `~/checkout`
 
    - **POST** `/create`
      - Create a Stripe Checkout Session
@@ -84,6 +100,7 @@ This the backend for the website for the Straight Up Bourbon YouTube channel. Th
    - **Fulfillment Functions**
      - updates inventory, creates an Order, Validates address, and creates a shipment/label
 
-9. Cloudinary: `~/cloudinary`
+9. ### Cloudinary:
+   `~/cloudinary`
    - **GET** `/:publicId`
      - Create a cloudinary signature
