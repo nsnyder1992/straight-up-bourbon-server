@@ -116,7 +116,21 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
       });
     }
 
-    res.status(200).json({ product });
+    const query = {
+      where: { id: product.id },
+      include: [
+        {
+          model: Stock,
+        },
+        {
+          model: Descriptions,
+        },
+      ],
+    };
+
+    const resProduct = await Product.findOne(query);
+
+    res.status(200).json({ product: resProduct });
   } catch (err) {
     console.log(err);
     res.status(500).json({ err });
@@ -239,7 +253,11 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       }
     }
 
-    res.status(200).json({ updatedProduct });
+    //update Product
+    query.include = [{ model: Stock }, { model: Descriptions }];
+    const resProduct = await Product.findOne(query);
+
+    res.status(200).json({ product: resProduct });
   } catch (err) {
     console.log(err);
     res.status(500).json({ err });
