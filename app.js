@@ -20,7 +20,6 @@ const customerOrders = require("./controllers/orders/customer-orders-controller"
 const tracking = require("./controllers/orders/tracking-controller");
 
 //aux controllers
-const youtube = require("./controllers/youtube-controller");
 const checkout = require("./controllers/checkout-controller");
 const cloudinary = require("./controllers/cloudinary-controller");
 
@@ -51,7 +50,6 @@ app.use(
 ////////////////////////////////////////////////
 //Exposed Routes
 ////////////////////////////////////////////////
-app.use("/youtube", youtube);
 app.use("/checkout", checkout);
 app.use("/user", user);
 app.use("/product", product);
