@@ -34,10 +34,6 @@ app.options("*", (req, res) => {
   });
 });
 
-////////////////////////////////////////////////
-//Exposed Routes (NOT JSON)
-////////////////////////////////////////////////
-
 //use json (enable to get req.body)
 app.use(
   express.json({
