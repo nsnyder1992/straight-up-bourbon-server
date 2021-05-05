@@ -2,6 +2,8 @@
 
 This the backend for the website for the Straight Up Bourbon YouTube channel. This project was created using node.js.
 
+Because some controllers use both admin and user privileges some endpoints are individually protected by middleware
+
 ## Major Functionality
 
 1. ### Users:
