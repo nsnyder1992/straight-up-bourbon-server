@@ -48,7 +48,7 @@ app.use(
 );
 
 ////////////////////////////////////////////////
-//Exposed Routes
+//Exposed Routes (Protected inside the controller)
 ////////////////////////////////////////////////
 app.use("/checkout", checkout);
 app.use("/user", user);
