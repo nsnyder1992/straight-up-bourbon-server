@@ -43,6 +43,10 @@ app.use(
   })
 );
 
+app.get("/test", (req, res) => {
+  res.send("Bourbon test");
+});
+
 ////////////////////////////////////////////////
 //Exposed Routes (Protected inside the controller)
 ////////////////////////////////////////////////
