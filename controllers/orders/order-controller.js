@@ -92,7 +92,7 @@ router.get("/:id", validateSession, async (req, res) => {
         items.data[i].product = product;
       }
 
-      res.status(200).json({ order, session, items });
+      res.status(200).json({ order: order, session: session, items: items });
     } else {
       res.status(403).json({ auth: "Not Authorized" });
     }

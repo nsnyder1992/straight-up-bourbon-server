@@ -1,23 +1,22 @@
 const Sequelize = require("sequelize");
 const { DataTypes } = require("sequelize"); //leave for later
 
-//create Sequelize instance and connect to only-pets db table
-
-const sequelize = new Sequelize("straight-up-bourbon", "postgres", "password", {
-  host: "localhost",
-  dialect: "postgres",
-});
-
-//Uncomment below when deploying to heroku
-// const sequelize = new Sequelize(process.env.DATABASE_URL, {
+//create Sequelize instance and connect to straight-up-bourbon db table
+// const sequelize = new Sequelize("straight-up-bourbon", "postgres", "password", {
+//   host: "localhost",
 //   dialect: "postgres",
-//   protocol: "postgres",
-//   dialectOptions: {
-//     ssl: { require: true, rejectUnauthorized: false },
-//     keepAlive: true,
-//   },
-//   ssl: true,
 // });
+
+// Uncomment below when deploying to heroku
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "postgres",
+  protocol: "postgres",
+  dialectOptions: {
+    ssl: { require: true, rejectUnauthorized: false },
+    keepAlive: true,
+  },
+  ssl: true,
+});
 
 //authenticate() sequelize
 sequelize

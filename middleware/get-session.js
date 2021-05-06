@@ -5,7 +5,7 @@ const getSession = (req, res, next) => {
   const token = req.headers.authorization;
   console.log("token -->", token);
   if (!token) {
-    return res.status(403).send({ auth: false, message: "No token provided" });
+    return next();
   } else {
     jwt.verify(token, process.env.JWT_SECRET, (err, decodeToken) => {
       // console.log("decodeToken --> ", decodeToken);
