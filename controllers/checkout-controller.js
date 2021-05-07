@@ -24,7 +24,7 @@ const getSession = require("../middleware/get-session");
 ////////////////////////////////////////////////
 router.post("/create", getSession, async (req, res) => {
   try {
-    const CLIENTURL = process.env.CLIENT_HOST + ":" + process.env.CLIENT_PORT;
+    const CLIENTURL = process.env.CLIENT_HOST;
 
     const paymentTypes = (process.env.PAYMENT_METHOD_TYPES || "card")
       .split(",")
