@@ -87,6 +87,7 @@ router.post("/webhook", async (req, res) => {
 
   console.log("WEBHOOK REACHED");
   let event;
+  console.log(req);
 
   try {
     event = await stripe.webhooks.constructEvent(payload, sig, endpointSecret);
