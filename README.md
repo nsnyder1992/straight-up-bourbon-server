@@ -4,7 +4,7 @@ This the backend for the website for the Straight Up Bourbon YouTube channel. Th
 
 Because some controllers use both admin and user privileges some endpoints are individually protected by middleware
 
-API: https://straight-up-bourbon-server.herokuapp.com/
+API URL: https://straight-up-bourbon-server.herokuapp.com/
 
 ## Major Functionality
 
