@@ -8,6 +8,7 @@ const fetch = require("node-fetch");
 const Product = require("../../db").product;
 const Stock = require("../../db").stock;
 const Descriptions = require("../../db").descriptions;
+const Op = require("../../db").Sequelize.Op;
 
 //stripe
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
@@ -25,7 +26,7 @@ router.get("/:page/:limit", async (req, res) => {
   const query = {
     limit: limit,
     offset: offset,
-    order: [["createdAt", "ASC"]],
+    order: [["placement", "ASC"]],
     include: [
       {
         model: Stock,
@@ -90,6 +91,15 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
 
     console.log(stripeSizePrice);
 
+    let placement = 1;
+    const lastItem = await Product.findOne({
+      where: { isActive: true },
+      order: [["placement", "DESC"]],
+    });
+    if (lastItem) {
+      if (lastItem.placement != null) placement = lastItem.placement + 1;
+    }
+
     const product = await Product.create({
       name: req.body.name,
       type: req.body.type,
@@ -98,7 +108,11 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
       cost: Math.floor(req.body.cost * 100),
       photoUrl: req.body.photoUrl,
       stripePriceId: stripeSizePrice["none"],
+      isActive: req.body.isActive || true,
+      placement: req.body.placement || placement,
     });
+
+    updatePlacement(placement, product.id);
 
     for (point of req.body.description_points) {
       await Descriptions.create({
@@ -142,6 +156,42 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
 ////////////////////////////////////////////////
 router.put("/:id", validateSessionAdmin, async (req, res) => {
   try {
+    //update placement
+    const isActive = req.body.isActive;
+    const placement = req.body.placement;
+
+    const currentState = await Product.findOne({
+      where: { id: req.params.id },
+    });
+
+    //this needs to be before the other if clause
+    if (placement !== currentState.placement) {
+      updatePlacement(placement, req.params.id);
+    }
+
+    //if active has changed, change placement
+    if (
+      isActive != currentState.isActive &&
+      placement == currentState.placement
+    ) {
+      if (isActive) {
+        const lastActive = await Product.findOne({
+          where: { isActive: true },
+          order: [["placement", "DESC"]],
+        });
+
+        placement = lastActive.placement + 1;
+        updatePlacement(placement, req.params.id);
+      } else {
+        const lastItem = await Product.findOne({
+          order: [["placement", "DESC"]],
+        });
+
+        placement = lastItem.placement + 1;
+        updatePlacement(placement, req.params.id);
+      }
+    }
+
     const postEntry = {
       name: req.body.name,
       type: req.body.type,
@@ -149,6 +199,8 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       description_main: req.body.description_main,
       cost: Math.floor(req.body.cost * 100),
       photoUrl: req.body.photoUrl,
+      isActive: isActive,
+      placement: placement,
     };
 
     const query = { where: { id: req.params.id } };
@@ -172,7 +224,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
     if (costChange) postEntry.stripePriceId = await createStripePriceId(req);
 
     //update Product
-    const updatedProduct = await Product.update(postEntry, query);
+    await Product.update(postEntry, query);
 
     //refresh Description Points
     await Descriptions.destroy({
@@ -258,6 +310,25 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
     const resProduct = await Product.findOne(query);
 
     res.status(200).json({ product: resProduct });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
+  }
+});
+
+///////////////////////////////////////////////////////////////
+//UPDATE ACTIVATION PRODUCT
+///////////////////////////////////////////////////////////////
+router.put("/activation/:id", validateSessionAdmin, async (req, res) => {
+  try {
+    const query = { where: { id: req.params.id } };
+
+    //update product activation
+    await Product.update({ isActive: req.body.isActive }, query);
+
+    const product = JSON.parse(JSON.stringify(await Product.findOne(query)));
+    console.log(product);
+    res.status(200).json({ product });
   } catch (err) {
     console.log(err);
     res.status(500).json({ err });
@@ -370,4 +441,27 @@ async function createStripePriceIds(req) {
 
   return stripeSizePrice;
 }
+
+///////////////////////////////////////////////////////////////
+// UPDATE PLACEMENT
+///////////////////////////////////////////////////////////////
+const updatePlacement = async (index, id) => {
+  try {
+    let products = await Product.findAll({
+      where: { placement: { [Op.gte]: index } },
+    });
+    products = JSON.parse(JSON.stringify(products));
+
+    for (let product of products) {
+      console.log(product, id);
+      if (product.id != id)
+        await Product.update(product.placement + 1, {
+          where: { id: product.id },
+        });
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 module.exports = router;

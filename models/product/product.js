@@ -27,6 +27,12 @@ module.exports = (sequelize, DataTypes) => {
     numItems: {
       type: DataTypes.INTEGER,
     },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+    },
+    placement: {
+      type: DataTypes.INTEGER,
+    },
   });
 
   return Product;

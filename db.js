@@ -1,22 +1,28 @@
 const Sequelize = require("sequelize");
 const { DataTypes } = require("sequelize"); //leave for later
+const os = require("os");
 
 //create Sequelize instance and connect to straight-up-bourbon db table
-// const sequelize = new Sequelize("straight-up-bourbon", "postgres", "password", {
-//   host: "localhost",
-//   dialect: "postgres",
-// });
-
-// Uncomment below when deploying to heroku
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: "postgres",
-  protocol: "postgres",
-  dialectOptions: {
-    ssl: { require: true, rejectUnauthorized: false },
-    keepAlive: true,
-  },
-  ssl: true,
-});
+//if equal to dev computer connect locally if not connect to cloud
+const hostname = os.hostname();
+console.log("HOSTNAME: " + os.hostname());
+let sequelize;
+if (hostname == "DESKTOP-LH98VU6") {
+  sequelize = new Sequelize("straight-up-bourbon", "postgres", "password", {
+    host: "localhost",
+    dialect: "postgres",
+  });
+} else {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: "postgres",
+    protocol: "postgres",
+    dialectOptions: {
+      ssl: { require: true, rejectUnauthorized: false },
+      keepAlive: true,
+    },
+    ssl: true,
+  });
+}
 
 //authenticate() sequelize
 sequelize
