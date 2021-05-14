@@ -7,7 +7,7 @@ const os = require("os");
 const hostname = os.hostname();
 console.log("HOSTNAME: " + os.hostname());
 let sequelize;
-if (hostname == "DESKTOP-LH98VU6") {
+if (hostname == "DESKTOP-LH98VU6" || hostname == "DESKTOP-5RPO176") {
   sequelize = new Sequelize("straight-up-bourbon", "postgres", "password", {
     host: "localhost",
     dialect: "postgres",

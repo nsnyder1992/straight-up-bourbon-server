@@ -154,27 +154,152 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
 ////////////////////////////////////////////////
 // UPDATE Product
 ////////////////////////////////////////////////
+const updateProduct = async (req, res) => {
+  const postEntry = {
+    name: req.body.name,
+    type: req.body.type,
+    color: req.body.color,
+    description_main: req.body.description_main,
+    cost: Math.floor(req.body.cost * 100),
+    photoUrl: req.body.photoUrl,
+    isActive: req.body.isActive,
+    placement: req.body.placement,
+  };
+
+  const query = { where: { id: req.params.id } };
+
+  const product = await Product.findOne(query);
+
+  //find out if cost changed
+  let costChange =
+    product.cost != Math.floor(req.body.cost * 100) ? true : false;
+
+  console.log(
+    "COST CHANGE: ",
+    costChange,
+    "COST: ",
+    product.cost,
+    "NEW COST: ",
+    Math.floor(req.body.cost * 100)
+  );
+
+  //change in cost create new product and price
+  if (costChange) postEntry.stripePriceId = await createStripePriceId(req);
+
+  //update Product
+  await Product.update(postEntry, query);
+
+  //refresh Description Points
+  await Descriptions.destroy({
+    where: { productId: req.params.id },
+  });
+
+  for (id of Object.keys(req.body.description_points)) {
+    console.log(id);
+    const description = await Descriptions.findOne({
+      where: { id: parseInt(id), productId: req.params.id },
+    });
+
+    if (description !== null) {
+      await Descriptions.update(
+        {
+          description: req.body.description_points[id],
+        },
+        { where: { id: id } }
+      );
+    } else {
+      await Descriptions.create({
+        productId: req.params.id,
+        description: req.body.description_points[id],
+      });
+    }
+  }
+
+  //get product stock
+  let stock = await Stock.findAll({
+    where: { productId: req.params.id },
+  });
+
+  stock = JSON.parse(JSON.stringify(stock));
+
+  let stripePriceIds;
+  if (costChange) {
+    stripePriceIds = await createStripePriceIds(req);
+  }
+
+  //delete stock not in query
+  for (item of stock) {
+    let deleted = true;
+    for (key of Object.keys(req.body.stock)) {
+      if (item.size == key) deleted = false;
+    }
+
+    if (deleted)
+      await Stock.destroy({
+        where: { productId: req.params.id, size: item.size },
+      });
+
+    console.log("DELETED", deleted);
+  }
+
+  //update stock
+  for (key of Object.keys(req.body.stock)) {
+    const item = await Stock.findOne({
+      where: { productId: req.params.id, size: key },
+    });
+
+    let stockUpdate = {
+      productId: req.params.id,
+      size: key,
+      numItems: req.body.stock[key],
+    };
+
+    if (stripePriceIds) stockUpdate.stripePriceId = stripePriceIds[key];
+
+    if (item) {
+      console.log("--PRODUCT UPDATE-- Item: ", stockUpdate);
+      await Stock.update(stockUpdate, {
+        where: { productId: req.params.id, size: key },
+      });
+    } else {
+      console.log("--CREATE NEW STOOCK ITEM-- Item: ", stockUpdate);
+      stockUpdate.stripePriceId = await createStripePriceIdBySize(req, key);
+      await Stock.create(stockUpdate);
+    }
+  }
+
+  //update Product
+  query.include = [{ model: Stock }, { model: Descriptions }];
+  const resProduct = await Product.findOne(query);
+  return resProduct;
+};
+
 router.put("/:id", validateSessionAdmin, async (req, res) => {
   try {
     //update placement
     const isActive = req.body.isActive;
-    const placement = req.body.placement;
+    let placement = req.body.placement;
 
     const currentState = await Product.findOne({
       where: { id: req.params.id },
     });
 
     //this needs to be before the other if clause
-    if (placement !== currentState.placement) {
+    console.log("Placement: ", placement, currentState.placement);
+    console.log("isActive: ", isActive, currentState.isActive);
+    if (
+      placement !== currentState.placement &&
+      isActive === currentState.isActive &&
+      placement !== undefined
+    ) {
+      console.log("Changing places: ", placement, currentState.placement);
       updatePlacement(placement, req.params.id);
     }
 
     //if active has changed, change placement
-    if (
-      isActive != currentState.isActive &&
-      placement == currentState.placement
-    ) {
+    if (isActive !== currentState.isActive) {
       if (isActive) {
+        console.log("Activating");
         const lastActive = await Product.findOne({
           where: { isActive: true },
           order: [["placement", "DESC"]],
@@ -183,6 +308,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
         placement = lastActive.placement + 1;
         updatePlacement(placement, req.params.id);
       } else {
+        console.log("Deactivating");
         const lastItem = await Product.findOne({
           order: [["placement", "DESC"]],
         });
@@ -192,122 +318,9 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       }
     }
 
-    const postEntry = {
-      name: req.body.name,
-      type: req.body.type,
-      color: req.body.color,
-      description_main: req.body.description_main,
-      cost: Math.floor(req.body.cost * 100),
-      photoUrl: req.body.photoUrl,
-      isActive: isActive,
-      placement: placement,
-    };
-
-    const query = { where: { id: req.params.id } };
-
-    const product = await Product.findOne(query);
-
-    //find out if cost changed
-    let costChange =
-      product.cost != Math.floor(req.body.cost * 100) ? true : false;
-
-    console.log(
-      "COST CHANGE: ",
-      costChange,
-      "COST: ",
-      product.cost,
-      "NEW COST: ",
-      Math.floor(req.body.cost * 100)
-    );
-
-    //change in cost create new product and price
-    if (costChange) postEntry.stripePriceId = await createStripePriceId(req);
-
-    //update Product
-    await Product.update(postEntry, query);
-
-    //refresh Description Points
-    await Descriptions.destroy({
-      where: { productId: req.params.id },
-    });
-
-    for (id of Object.keys(req.body.description_points)) {
-      console.log(id);
-      const description = await Descriptions.findOne({
-        where: { id: parseInt(id), productId: req.params.id },
-      });
-
-      if (description !== null) {
-        await Descriptions.update(
-          {
-            description: req.body.description_points[id],
-          },
-          { where: { id: id } }
-        );
-      } else {
-        await Descriptions.create({
-          productId: req.params.id,
-          description: req.body.description_points[id],
-        });
-      }
-    }
-
-    //get product stock
-    let stock = await Stock.findAll({
-      where: { productId: req.params.id },
-    });
-
-    stock = JSON.parse(JSON.stringify(stock));
-
-    let stripePriceIds;
-    if (costChange) {
-      stripePriceIds = await createStripePriceIds(req);
-    }
-
-    //delete stock not in query
-    for (item of stock) {
-      let deleted = true;
-      for (key of Object.keys(req.body.stock)) {
-        if (item.size == key) deleted = false;
-      }
-
-      if (deleted)
-        await Stock.destroy({
-          where: { productId: req.params.id, size: item.size },
-        });
-
-      console.log("DELETED", deleted);
-    }
-
-    //update stock
-    for (key of Object.keys(req.body.stock)) {
-      const item = await Stock.findOne({
-        where: { productId: req.params.id, size: key },
-      });
-
-      let stockUpdate = {
-        productId: req.params.id,
-        size: key,
-        numItems: req.body.stock[key],
-      };
-
-      if (stripePriceIds) stockUpdate.stripePriceId = stripePriceIds[key];
-
-      if (item) {
-        console.log("--PRODUCT UPDATE-- Item: ", stockUpdate);
-        await Stock.update(stockUpdate, {
-          where: { productId: req.params.id, size: key },
-        });
-      } else {
-        console.log("--CREATE NEW STOOCK ITEM-- Item: ", stockUpdate);
-        stockUpdate.stripePriceId = await createStripePriceIdBySize(req, key);
-        await Stock.create(stockUpdate);
-      }
-    }
-
-    //update Product
-    query.include = [{ model: Stock }, { model: Descriptions }];
-    const resProduct = await Product.findOne(query);
+    //update product
+    req.body.placement = placement;
+    let resProduct = await updateProduct(req, res);
 
     res.status(200).json({ product: resProduct });
   } catch (err) {
@@ -447,17 +460,24 @@ async function createStripePriceIds(req) {
 ///////////////////////////////////////////////////////////////
 const updatePlacement = async (index, id) => {
   try {
+    //get products greater than index by placement order
     let products = await Product.findAll({
       where: { placement: { [Op.gte]: index } },
+      order: [["placement", "ASC"]],
     });
     products = JSON.parse(JSON.stringify(products));
 
-    for (let product of products) {
-      console.log(product, id);
-      if (product.id != id)
-        await Product.update(product.placement + 1, {
-          where: { id: product.id },
-        });
+    //update placements past the given index
+    for (let i in products) {
+      let product = products[i];
+      if (product.id != id) {
+        await Product.update(
+          { placement: parseInt(index) + parseInt(i) + 1 },
+          {
+            where: { id: product.id },
+          }
+        );
+      }
     }
   } catch (err) {
     console.log(err);
