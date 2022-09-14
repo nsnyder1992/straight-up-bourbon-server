@@ -1,9 +1,6 @@
 require("dotenv");
 const router = require("express").Router();
 
-//aux libraries
-const fetch = require("node-fetch");
-
 //models
 const Product = require("../../db").product;
 const Stock = require("../../db").stock;
