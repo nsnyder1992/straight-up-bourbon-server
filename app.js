@@ -22,6 +22,7 @@ const tracking = require("./controllers/orders/tracking-controller");
 //aux controllers
 const checkout = require("./controllers/checkout-controller");
 const cloudinary = require("./controllers/cloudinary-controller");
+const youtube = require("./controllers/video-controller");
 
 //headers
 app.use(require("./middleware/headers"));
@@ -54,6 +55,7 @@ app.use("/checkout", checkout);
 app.use("/user", user);
 app.use("/product", product);
 app.use("/track", tracking);
+app.use("/youtube", youtube);
 
 ////////////////////////////////////////////////
 //User Protected Routes
