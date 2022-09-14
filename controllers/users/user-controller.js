@@ -199,8 +199,6 @@ router.put("/updatePasswordViaEmail", async (req, res) => {
     },
   }).catch((err) => console.log(err));
 
-  console.log(req.body.password);
-
   if (user === null)
     return res
       .status(404)
