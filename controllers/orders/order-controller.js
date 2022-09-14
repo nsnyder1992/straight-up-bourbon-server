@@ -13,6 +13,8 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
 //email
 const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
+const OAuth2 = google.auth.OAuth2;
 
 //auth
 const validateSession = require("../../middleware/validate-session");
@@ -185,12 +187,36 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
 });
 
 //email refund data
-const emailRefund = (user, refundId) => {
+const emailRefund = async (user, refundId) => {
+  const oauth2Client = new OAuth2(
+    process.env.EMAIL_CLIENT_ID,
+    process.env.EMAIL_CLIENT_SECRET,
+    process.env.HOST
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: process.env.EMAIL_REFRESH_TOKEN,
+  });
+
+  const accessToken = await new Promise((resolve, reject) => {
+    oauth2Client.getAccessToken((err, token) => {
+      if (err) {
+        reject("Failed to create access token :(");
+      }
+      resolve(token);
+    });
+  });
+
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
+      type: "OAuth2",
       user: process.env.EMAIL_ADDRESS,
       pass: process.env.EMAIL_PASSWORD,
+      accessToken,
+      clientId: process.env.EMAIL_CLIENT_ID,
+      clientSecret: process.env.EMAIL_CLIENT_SECRET,
+      refreshToken: process.env.EMAIL_REFRESH_TOKEN,
     },
   });
 

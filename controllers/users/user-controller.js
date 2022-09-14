@@ -11,6 +11,8 @@ const validateSession = require("../../middleware/validate-session");
 
 //email
 const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
+const OAuth2 = google.auth.OAuth2;
 
 //stripe
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
@@ -117,7 +119,7 @@ router.post("/forgotPassword", (req, res) => {
     where: {
       email: req.body.email,
     },
-  }).then((user) => {
+  }).then(async (user) => {
     if (user === null) {
       res.status(403).send("email not in db");
     } else {
@@ -127,11 +129,35 @@ router.post("/forgotPassword", (req, res) => {
         resetPasswordExpires: Date.now() + 3600000,
       });
 
+      const oauth2Client = new OAuth2(
+        process.env.EMAIL_CLIENT_ID,
+        process.env.EMAIL_CLIENT_SECRET,
+        process.env.HOST
+      );
+
+      oauth2Client.setCredentials({
+        refresh_token: process.env.EMAIL_REFRESH_TOKEN,
+      });
+
+      const accessToken = await new Promise((resolve, reject) => {
+        oauth2Client.getAccessToken((err, token) => {
+          if (err) {
+            reject("Failed to create access token :(");
+          }
+          resolve(token);
+        });
+      });
+
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
+          type: "OAuth2",
           user: process.env.EMAIL_ADDRESS,
           pass: process.env.EMAIL_PASSWORD,
+          accessToken,
+          clientId: process.env.EMAIL_CLIENT_ID,
+          clientSecret: process.env.EMAIL_CLIENT_SECRET,
+          refreshToken: process.env.EMAIL_REFRESH_TOKEN,
         },
       });
 
