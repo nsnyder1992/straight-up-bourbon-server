@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const Meta = sequelize.define("meta", {
+  const Icon = sequelize.define("icon", {
     name: {
       type: DataTypes.STRING,
     },
@@ -13,5 +13,5 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-  return Meta;
+  return Icon;
 };
