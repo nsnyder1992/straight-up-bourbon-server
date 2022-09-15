@@ -66,12 +66,8 @@ router.get("/path/", (req, res) => {
       },
     },
   })
-    .then((meta) => {
-      res.status(200).json({
-        path: meta.path,
-        message: meta.message,
-        type: meta.type,
-      });
+    .then((metas) => {
+      res.status(200).json(metas);
     })
     .catch((err) => res.status(500).json({ err: err }));
 });
