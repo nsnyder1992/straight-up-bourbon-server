@@ -47,6 +47,8 @@ db.product = sequelize.import("./models/product/product");
 db.stock = sequelize.import("./models/product/product-stock");
 db.descriptions = sequelize.import("./models/product/product-descriptions");
 db.orders = sequelize.import("./models/order/orders");
+db.meta = sequelize.import("./models/meta/meta");
+db.icons = sequelize.import("./models/meta/icons");
 
 //Define through tables for M-N associations later
 db.customerOrders = sequelize.define("customer_orders", {
@@ -96,6 +98,8 @@ const syncDB = async () => {
   await db.descriptions.sync();
   await db.orders.sync();
   await db.customerOrders.sync();
+  await db.meta.sync();
+  await db.icons.sync();
 
   //the rest of the table
   await db.sequelize.sync();
