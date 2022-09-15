@@ -162,7 +162,7 @@ router.post("/forgotPassword", (req, res) => {
       });
 
       const mailOptions = {
-        from: "straight-up-bourbon@gmail.com",
+        from: "straightupbourbon@gmail.com",
         to: user.email,
         subject: "Link to Reset Password",
         text:

@@ -221,12 +221,12 @@ const emailRefund = async (user, refundId) => {
   });
 
   const mailOptions = {
-    from: "straight-up-bourbon@gmail.com",
+    from: "straightupbourbon@gmail.com",
     to: user.email,
     subject: "Refund on the way",
     text:
       "You are recieving this email because you have requested to cancel your order. \n\n" +
-      "You should be receiving your refund within a 3-5 days. Email us back at straight-up-bourbon@gmail.com if you have any further questions\n\n" +
+      "You should be receiving your refund within a 3-5 days. Email us back at straightupbourbon@gmail.com if you have any further questions\n\n" +
       `Refund id: ${refundId}\n\n` +
       "Thanks!\n\n" +
       "Luke & JP",
