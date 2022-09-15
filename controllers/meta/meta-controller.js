@@ -101,7 +101,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
 //////////////////////////////////////////////////////////////////////
 router.delete("/:id", validateSessionAdmin, async (req, res) => {
   try {
-    await Meta.destroy({ where: { id: req.user.id } });
+    await Meta.destroy({ where: { id: req.params.id } });
 
     res.status(200).json({ message: "Icon Removed" });
   } catch (err) {
