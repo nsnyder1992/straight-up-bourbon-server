@@ -43,7 +43,7 @@ router.get("/", async (req, res) => {
 //////////////////////////////////////////////////////////////////////
 // GET META BY ID
 //////////////////////////////////////////////////////////////////////
-router.get("/:id", validateSessionAdmin, (req, res) => {
+router.get("/:id", (req, res) => {
   Meta.findOne({ where: { id: req.params.id } })
     .then((meta) => {
       res.status(200).json({
@@ -58,7 +58,7 @@ router.get("/:id", validateSessionAdmin, (req, res) => {
 //////////////////////////////////////////////////////////////////////
 // GET META LIKE PATH
 //////////////////////////////////////////////////////////////////////
-router.get("/path/", (req, res) => {
+router.get("/by/path/", (req, res) => {
   Meta.findAll({
     where: {
       path: {
