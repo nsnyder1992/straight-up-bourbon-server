@@ -19,6 +19,7 @@ const OAuth2 = google.auth.OAuth2;
 //auth
 const validateSession = require("../../middleware/validate-session");
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
+const Meta = require("../../db").meta;
 
 ////////////////////////////////////////////////
 // GET STRIPE SESSIONS
@@ -220,10 +221,17 @@ const emailRefund = async (user, refundId) => {
     },
   });
 
+  const meta = await Meta.findOne({
+    where: {
+      type: "email",
+      path: "/cancel/:id",
+    },
+  });
+
   const mailOptions = {
     from: "straightupbourbon@gmail.com",
     to: user.email,
-    subject: "Refund on the way",
+    subject: `Refund on the way (Refund id: ${refundId}) `,
     text:
       "You are recieving this email because you have requested to cancel your order. \n\n" +
       "You should be receiving your refund within a 3-5 days. Email us back at straightupbourbon@gmail.com if you have any further questions\n\n" +
@@ -231,6 +239,8 @@ const emailRefund = async (user, refundId) => {
       "Thanks!\n\n" +
       "Luke & JP",
   };
+
+  if (meta?.message) mailOptions.text = meta.message;
 
   console.log("sending email");
 
