@@ -228,6 +228,8 @@ const emailRefund = async (user, refundId) => {
     },
   });
 
+  console.log(metat);
+
   const mailOptions = {
     from: "straightupbourbon@gmail.com",
     to: user.email,
