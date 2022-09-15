@@ -17,11 +17,13 @@ const stock = require("./controllers/products/stock-controller");
 const description = require("./controllers/products/description-controller");
 const order = require("./controllers/orders/order-controller");
 const customerOrders = require("./controllers/orders/customer-orders-controller");
-const tracking = require("./controllers/orders/tracking-controller");
+const meta = require("./controllers/meta/meta-controller");
+const icons = require("./controllers/meta/icon-controller");
 
 //aux controllers
 const checkout = require("./controllers/checkout-controller");
 const cloudinary = require("./controllers/cloudinary-controller");
+const tracking = require("./controllers/orders/tracking-controller");
 
 //headers
 app.use(require("./middleware/headers"));
@@ -54,6 +56,8 @@ app.use("/checkout", checkout);
 app.use("/user", user);
 app.use("/product", product);
 app.use("/track", tracking);
+app.use("/meta", meta);
+app.use("/icon", icons);
 
 ////////////////////////////////////////////////
 //User Protected Routes
