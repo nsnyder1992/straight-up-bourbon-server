@@ -59,7 +59,7 @@ router.get("/:id", validateSessionAdmin, (req, res) => {
 // GET META LIKE PATH
 //////////////////////////////////////////////////////////////////////
 router.get("/path/", (req, res) => {
-  Meta.findOne({
+  Meta.findAll({
     where: {
       path: {
         [Op.like]: req.body.path,
