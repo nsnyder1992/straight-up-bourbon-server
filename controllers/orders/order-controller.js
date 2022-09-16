@@ -174,7 +174,7 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
         { where: { id: id } }
       );
 
-      emailRefund(req.user, refund.id);
+      //emailRefund(req.user, refund.id);
 
       res.status(200).json({ response, refund });
     } else {
@@ -227,8 +227,6 @@ const emailRefund = async (user, refundId) => {
       path: "/cancel/:id",
     },
   });
-
-  console.log(metat);
 
   const mailOptions = {
     from: "straightupbourbon@gmail.com",
