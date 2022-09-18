@@ -62,7 +62,7 @@ router.post("/create", getSession, async (req, res) => {
     }
 
     if (outOfStock.length > 0)
-      return res.status(500).json({ err: "Products out of stock", outOfStock });
+      return res.status(200).json({ err: "Products out of stock", outOfStock });
 
     let stripeQuery = {
       payment_method_types: paymentTypes,
@@ -91,7 +91,7 @@ router.post("/create", getSession, async (req, res) => {
 });
 
 ////////////////////////////////////////////////
-// CREATE CHECKOUT WEBHOOK LISTENER
+// CHECKOUT WEBHOOK LISTENER
 ////////////////////////////////////////////////
 router.post("/webhook", async (req, res) => {
   const payload = req.rawBody;
