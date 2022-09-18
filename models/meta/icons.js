@@ -1,14 +1,17 @@
 module.exports = (sequelize, DataTypes) => {
-  const About = sequelize.define("about", {
-    text: {
+  const Icon = sequelize.define("icon", {
+    name: {
+      type: DataTypes.STRING,
+    },
+    icon: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    photoUrl: {
+    link: {
       type: DataTypes.STRING,
       allowNull: false,
     },
   });
 
-  return About;
+  return Icon;
 };

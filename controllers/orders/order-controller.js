@@ -19,6 +19,7 @@ const OAuth2 = google.auth.OAuth2;
 //auth
 const validateSession = require("../../middleware/validate-session");
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
+const Meta = require("../../db").meta;
 
 ////////////////////////////////////////////////
 // GET STRIPE SESSIONS
@@ -187,7 +188,7 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
         { status: "Canceled" },
         { where: { id: id } }
       );
-
+      
       res.status(200).json({ response, refund });
     } else {
       response = "Not Authorized";
@@ -226,6 +227,7 @@ router.put("/admin/cancel/:id", validateSessionAdmin, async (req, res) => {
     const refund = await stripe.refunds.create({
       payment_intent: session.payment_intent,
     });
+<<<<<<< HEAD
 
     response = await Orders.update(
       { status: "Canceled" },
@@ -238,5 +240,54 @@ router.put("/admin/cancel/:id", validateSessionAdmin, async (req, res) => {
     res.status(500).json({ err });
   }
 });
+=======
+  });
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASSWORD,
+      accessToken,
+      clientId: process.env.EMAIL_CLIENT_ID,
+      clientSecret: process.env.EMAIL_CLIENT_SECRET,
+      refreshToken: process.env.EMAIL_REFRESH_TOKEN,
+    },
+  });
+
+  const meta = await Meta.findOne({
+    where: {
+      type: "email",
+      path: "/cancel/:id",
+    },
+  });
+
+  const mailOptions = {
+    from: "straightupbourbon@gmail.com",
+    to: user.email,
+    subject: `Refund on the way (Refund id: ${refundId}) `,
+    text:
+      "You are recieving this email because you have requested to cancel your order. \n\n" +
+      "You should be receiving your refund within a 3-5 days. Email us back at straightupbourbon@gmail.com if you have any further questions\n\n" +
+      `Refund id: ${refundId}\n\n` +
+      "Thanks!\n\n" +
+      "Luke & JP",
+  };
+
+  if (meta?.message) mailOptions.text = meta.message;
+
+  console.log("sending email");
+
+  transporter.sendMail(mailOptions, (err, response) => {
+    if (err) {
+      console.log("error: ", err);
+    } else {
+      console.log("success: ", response);
+      res.status(200).json("recovery email sent");
+    }
+  });
+};
+>>>>>>> ec15af81e3d52687a5c5d8122075b1fee454ca81
 
 module.exports = router;
