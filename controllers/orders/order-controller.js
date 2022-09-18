@@ -162,6 +162,21 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
     if (order) {
       const order = await Orders.findOne({ where: { id: id } });
 
+      if (!order.trackingEnabled)
+        return res
+          .status(405)
+          .json({ err: "Tracking must be enabled in order to cancel order" });
+
+      if (
+        !(
+          order.status === "Waiting to be Fulfilled" ||
+          order.status === "Invalid Address"
+        )
+      )
+        return res
+          .status(405)
+          .json({ err: "Status of order does not allow for cancellation" });
+
       const session = await stripe.checkout.sessions.retrieve(order.sessionId);
 
       const refund = await stripe.refunds.create({
@@ -169,11 +184,9 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
       });
 
       response = await Orders.update(
-        { isCanceled: true },
+        { status: "Canceled" },
         { where: { id: id } }
       );
-
-      emailRefund(req.user, refund.id);
 
       res.status(200).json({ response, refund });
     } else {
@@ -186,62 +199,44 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
   }
 });
 
-//email refund data
-const emailRefund = async (user, refundId) => {
-  const oauth2Client = new OAuth2(
-    process.env.EMAIL_CLIENT_ID,
-    process.env.EMAIL_CLIENT_SECRET,
-    process.env.HOST
-  );
+router.put("/:id", validateSessionAdmin, async (req, res) => {
+  const id = req.params.id;
 
-  oauth2Client.setCredentials({
-    refresh_token: process.env.EMAIL_REFRESH_TOKEN,
-  });
+  try {
+    const response = await Orders.update(req.body, { where: { id: id } });
+    res.status(200).json(response);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+});
 
-  const accessToken = await new Promise((resolve, reject) => {
-    oauth2Client.getAccessToken((err, token) => {
-      if (err) {
-        reject("Failed to create access token :(");
-      }
-      resolve(token);
+////////////////////////////////////////////////
+// CANCEL ORDER
+////////////////////////////////////////////////
+router.put("/admin/cancel/:id", validateSessionAdmin, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    let response;
+
+    const order = await Orders.findOne({ where: { id: id } });
+
+    const session = await stripe.checkout.sessions.retrieve(order.sessionId);
+
+    const refund = await stripe.refunds.create({
+      payment_intent: session.payment_intent,
     });
-  });
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      type: "OAuth2",
-      user: process.env.EMAIL_ADDRESS,
-      pass: process.env.EMAIL_PASSWORD,
-      accessToken,
-      clientId: process.env.EMAIL_CLIENT_ID,
-      clientSecret: process.env.EMAIL_CLIENT_SECRET,
-      refreshToken: process.env.EMAIL_REFRESH_TOKEN,
-    },
-  });
+    response = await Orders.update(
+      { status: "Canceled" },
+      { where: { id: id } }
+    );
 
-  const mailOptions = {
-    from: "straight-up-bourbon@gmail.com",
-    to: user.email,
-    subject: "Refund on the way",
-    text:
-      "You are recieving this email because you have requested to cancel your order. \n\n" +
-      "You should be receiving your refund within a 3-5 days. Email us back at straight-up-bourbon@gmail.com if you have any further questions\n\n" +
-      `Refund id: ${refundId}\n\n` +
-      "Thanks!\n\n" +
-      "Luke & JP",
-  };
-
-  console.log("sending email");
-
-  transporter.sendMail(mailOptions, (err, response) => {
-    if (err) {
-      console.log("error: ", err);
-    } else {
-      console.log("success: ", response);
-      res.status(200).json("recovery email sent");
-    }
-  });
-};
+    res.status(200).json({ response, refund });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
+  }
+});
 
 module.exports = router;

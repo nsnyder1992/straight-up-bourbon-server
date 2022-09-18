@@ -4,21 +4,20 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    isFulfilled: {
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    trackingEnabled: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
-    isShipped: {
+    email: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
-    isComplete: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-    },
-    isCanceled: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+    carrierCode: {
+      type: DataTypes.STRING,
     },
     trackingNumber: {
       type: DataTypes.STRING,

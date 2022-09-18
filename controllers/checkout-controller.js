@@ -10,6 +10,7 @@ const request = require("request-promise");
 const Stock = require("../db").stock;
 const Orders = require("../db").orders;
 const User = require("../db").user;
+const Meta = require("../db").meta;
 const customerOrders = require("../db").customerOrders;
 
 //stripe
@@ -18,6 +19,7 @@ const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 
 //middleware
 const getSession = require("../middleware/get-session");
+const { sendEmail } = require("../utils/email");
 
 ////////////////////////////////////////////////
 // CREATE STRIPE CHECKOUT SESSION
@@ -33,14 +35,21 @@ router.post("/create", getSession, async (req, res) => {
     const { products, currency } = req.body;
 
     //build line items
+    let outOfStock = [];
     let line_items = [];
     for (let product of products) {
       if (product.quantity <= 0) continue;
 
       console.log(product.product);
+
       let prod = await Stock.findOne({
         where: { productId: product.product.id, size: product.product.size },
       });
+
+      if (prod.numItems < product.quantity) {
+        outOfStock.push(product.product.id);
+        continue;
+      }
 
       prod = JSON.parse(JSON.stringify(prod));
 
@@ -51,6 +60,9 @@ router.post("/create", getSession, async (req, res) => {
         quantity: product.quantity,
       });
     }
+
+    if (outOfStock.length > 0)
+      return res.status(500).json({ err: "Products out of stock", outOfStock });
 
     let stripeQuery = {
       payment_method_types: paymentTypes,
@@ -116,10 +128,9 @@ const fulfillOrder = async (session) => {
 
     const order = await Orders.create({
       sessionId: session.id,
-      isShipped: false,
-      isFulfilled: false,
-      isComplete: false,
-      isCanceled: false,
+      status: "Waiting to be Fulfilled",
+      trackingEnabled: false,
+      email: session.customer_email,
     });
 
     console.log("PRODUCTS RESPONSE: ", products);
@@ -143,13 +154,15 @@ const fulfillOrder = async (session) => {
 //validate address
 const validateAddress = async (session, order) => {
   try {
-    const address = session.shipping.address;
+    console.log("SESSION", session);
+
+    const address = session.shipping_details.address;
     const options = {
       method: "POST",
       url: "https://api.shipengine.com/v1/addresses/validate",
       headers: {
         Host: "api.shipengine.com",
-        "API-Key": "TEST_YEjZupSV+CO1vZVS60G0guv/IjijhTcRT4hXgPYw8wI",
+        "API-Key": process.env.SHIP_ENGINE_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify([
@@ -171,10 +184,28 @@ const validateAddress = async (session, order) => {
       matchedAddress = addresses[0].matched_address;
       console.log("ADDRESSES: ", matchedAddress);
 
-      validAddress = false;
-      if (addresses[0].status === "verified") validAddress = true;
+      order.update({ status: "Invalid Address" });
 
-      createShipment(session, order, matchedAddress);
+      const titleMeta = Meta.findOne({
+        where: { path: "Invalid Address", type: "email_title" },
+      });
+      const emailMeta = Meta.findOne({
+        where: { path: "Invalid Address", type: "email_message" },
+      });
+
+      let title = "Invalid Address for Order: " + order.id;
+
+      let message =
+        "Your recent order used an invalid address. \n\nIf our system has made a mistake and this is a valid address, we are sorry for the inconvenience. \n\nEither way please send us the correct Address along with the order Id in the title above. Send to: straightupbourbon@gmail.com \n\nThanks!\n\nLuke & JP";
+
+      if (titleMeta?.message) title = titleMeta.message;
+      if (emailMeta?.message) message = email?.message;
+
+      if (addresses[0].status === "verified") {
+        return createShipment(session, order, matchedAddress);
+      }
+
+      sendEmail(session.customer_email, title, message);
     });
   } catch (err) {
     console.log(err);
@@ -243,6 +274,7 @@ const createShipment = async (session, order, matchedAddress) => {
         console.log(json);
         const trackingNumber = json.tracking_number;
         const shipmentId = json.label_id;
+        const carrierCode = json.carrier_code;
 
         console.log(
           "Shipment: ",
@@ -251,7 +283,10 @@ const createShipment = async (session, order, matchedAddress) => {
           trackingNumber
         );
 
-        order.update({ shipmentId, trackingNumber });
+        order.update({ shipmentId, trackingNumber, carrierCode });
+        order.update({
+          trackingEnabled: trackPackage(trackingNumber, carrierCode),
+        });
       })
       .catch((err) => {
         console.log(err);
@@ -260,6 +295,8 @@ const createShipment = async (session, order, matchedAddress) => {
     console.log(err);
   }
 };
+
+//track order
 
 //update stock
 const updateInventory = async (session) => {
