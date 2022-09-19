@@ -251,7 +251,7 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
     if (salutationMeta?.message) salutation = salutationMeta?.message;
 
     title += ` ${status} (Order #${orderId})`;
-    message += `\n\n${orderStatus}\\n\\n${salutation}`;
+    message += `\n\n${orderStatus}\n\n${salutation}`;
 
     sendEmail(email, title, message);
   } catch (err) {
