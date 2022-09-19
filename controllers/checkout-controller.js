@@ -108,6 +108,8 @@ router.post("/webhook", async (req, res) => {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
 
+    console.log("SESSION:", session);
+
     // Fulfill the purchase...
     const { order } = await fulfillOrder(session);
 
