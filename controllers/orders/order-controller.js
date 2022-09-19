@@ -134,7 +134,7 @@ router.post("/lineItems/:limit", validateSessionAdmin, async (req, res) => {
 ////////////////////////////////////////////////
 // GET LABEL FOR ORDER
 ////////////////////////////////////////////////
-router.get("/label/:id", validateSessionAdmin, async (req, res) => {
+router.get("/create/label/:id", validateSessionAdmin, async (req, res) => {
   try {
     const order = await Orders.findOne({ where: { id: req.params.id } });
 
@@ -152,7 +152,7 @@ router.get("/label/:id", validateSessionAdmin, async (req, res) => {
 ////////////////////////////////////////////////
 // TRACK ORDER
 ////////////////////////////////////////////////
-router.get("/track/:id", validateSessionAdmin, async (req, res) => {
+router.get("/create/track/:id", validateSessionAdmin, async (req, res) => {
   try {
     const order = await Orders.findOne({ where: { id: req.params.id } });
 
