@@ -242,29 +242,24 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
   }
 });
 
-router.put("/:id", validateSessionAdmin, async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    const response = await Orders.update(req.body, { where: { id: id } });
-    res.status(200).json(response);
-  } catch (err) {
-    res.status(500).json({ err });
-  }
-});
-
 ////////////////////////////////////////////////
 // CANCEL ORDER
 ////////////////////////////////////////////////
 router.put("/admin/cancel/:id", validateSessionAdmin, async (req, res) => {
   const id = req.params.id;
+  const { stripeId } = req.body;
 
   try {
     let response;
 
-    const order = await Orders.findOne({ where: { id: id } });
+    const order = await Orders.findOne({ where: { id } });
 
     const session = await stripe.checkout.sessions.retrieve(order.sessionId);
+
+    if (session.payment_intent != stripeId)
+      return res
+        .status(400)
+        .json({ err: "No order with that Id and stripe id" });
 
     const refund = await stripe.refunds.create({
       payment_intent: session.payment_intent,
