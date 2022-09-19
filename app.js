@@ -25,6 +25,7 @@ const checkout = require("./controllers/checkout-controller");
 const cloudinary = require("./controllers/cloudinary-controller");
 const youtube = require("./controllers/video-controller");
 const tracking = require("./controllers/orders/tracking-controller");
+const expressBasicAuth = require("express-basic-auth");
 
 //headers
 app.use(require("./middleware/headers"));
@@ -60,6 +61,13 @@ app.use("/track", tracking);
 app.use("/youtube", youtube);
 app.use("/meta", meta);
 app.use("/icon", icons);
+
+app.use(
+  "/track/webhook",
+  expressBasicAuth({
+    user: { TRACKING: process.env.TRACK_PWD },
+  })
+);
 
 ////////////////////////////////////////////////
 //User Protected Routes

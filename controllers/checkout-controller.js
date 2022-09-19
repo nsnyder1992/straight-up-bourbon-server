@@ -20,6 +20,7 @@ const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 //middleware
 const getSession = require("../middleware/get-session");
 const { sendEmail } = require("../utils/email");
+const { createLabel } = require("../utils/package");
 
 ////////////////////////////////////////////////
 // CREATE STRIPE CHECKOUT SESSION
@@ -35,7 +36,6 @@ router.post("/create", getSession, async (req, res) => {
     const { products, currency } = req.body;
 
     //build line items
-    let outOfStock = [];
     let line_items = [];
     for (let product of products) {
       if (product.quantity <= 0) continue;
@@ -47,8 +47,10 @@ router.post("/create", getSession, async (req, res) => {
       });
 
       if (prod.numItems < product.quantity) {
-        outOfStock.push(product.product.id);
-        continue;
+        return res.status(200).json({
+          err: `Not enough stock for the order: ${product.product.name} only has ${prod.numItems} left. Please update cart to amount before continuing`,
+          outOfStock,
+        });
       }
 
       prod = JSON.parse(JSON.stringify(prod));
@@ -60,9 +62,6 @@ router.post("/create", getSession, async (req, res) => {
         quantity: product.quantity,
       });
     }
-
-    if (outOfStock.length > 0)
-      return res.status(200).json({ err: "Products out of stock", outOfStock });
 
     let stripeQuery = {
       payment_method_types: paymentTypes,
@@ -184,6 +183,10 @@ const validateAddress = async (session, order) => {
       matchedAddress = addresses[0].matched_address;
       console.log("ADDRESSES: ", matchedAddress);
 
+      if (addresses[0].status === "verified") {
+        return createLabel(session, order);
+      }
+
       order.update({ status: "Invalid Address" });
 
       const titleMeta = Meta.findOne({
@@ -193,110 +196,29 @@ const validateAddress = async (session, order) => {
         where: { path: "Invalid Address", type: "email_message" },
       });
 
-      let title = "Invalid Address for Order: " + order.id;
+      const salutationMeta = Meta.findOne({
+        where: { path: "*", type: "email_salutation" },
+      });
+
+      let title = "Invalid Address";
 
       let message =
-        "Your recent order used an invalid address. \n\nIf our system has made a mistake and this is a valid address, we are sorry for the inconvenience. \n\nEither way please send us the correct Address along with the order Id in the title above. Send to: straightupbourbon@gmail.com \n\nThanks!\n\nLuke & JP";
+        "Your recent order used an invalid address. \n\nIf our system has made a mistake and this is a valid address, we are sorry for the inconvenience. \n\nEither way please send us the correct Address along with the order Id in the title above. Send to: straightupbourbon@gmail.com";
+
+      let salutation = "\n\nThanks!\n\nLuke & JP";
 
       if (titleMeta?.message) title = titleMeta.message;
-      if (emailMeta?.message) message = email?.message;
+      if (emailMeta?.message) message = emailMeta?.message;
+      if (salutationMeta?.message) salutation = salutationMeta?.message;
 
-      if (addresses[0].status === "verified") {
-        return createShipment(session, order, matchedAddress);
-      }
-
+      title += ` (Order #${order.id})`;
+      message += salutation;
       sendEmail(session.customer_email, title, message);
     });
   } catch (err) {
     console.log(err);
   }
 };
-
-//create shipment
-const createShipment = async (session, order, matchedAddress) => {
-  try {
-    const address = session.shipping.address;
-    const shipTo = {
-      name: session.shipping.name,
-      address_line1: address.line1,
-      address_line2: address.line2,
-      city_locality: address.city,
-      state_province: address.state,
-      postal_code: address.postal_code,
-      country_code: address.country,
-      address_residential_indicator: "unknown",
-    };
-
-    const shipFrom = {
-      company_name: process.env.COMPANY,
-      name: process.env.SHIP_NAME,
-      phone: process.env.SHIP_PHONE,
-      address_line1: process.env.ADDRESS1,
-      address_line2: process.env.ADDRESS2,
-      city_locality: process.env.CITY,
-      state_province: process.env.STATE,
-      postal_code: process.env.ZIP,
-      country_code: process.env.COUNTRY,
-      address_residential_indicator: process.env.IS_RESIDENTIAL,
-    };
-
-    console.log("SHIP TO: ", shipTo);
-    console.log("SHIP FROM: ", shipFrom);
-
-    const body = JSON.stringify({
-      shipment: {
-        service_code: "ups_ground",
-        ship_to: shipTo,
-        ship_from: shipFrom,
-        packages: [
-          {
-            weight: { value: 20, unit: "ounce" },
-            dimensions: { height: 6, width: 12, length: 12, unit: "inch" },
-          },
-        ],
-      },
-    });
-
-    var options = {
-      method: "POST",
-      url: "https://api.shipengine.com/v1/labels",
-      headers: {
-        Host: "api.shipengine.com",
-        "API-Key": process.env.SHIP_ENGINE_KEY,
-        "Content-Type": "application/json",
-      },
-      body,
-    };
-
-    await request(options)
-      .then((response) => {
-        const json = JSON.parse(response);
-        console.log(json);
-        const trackingNumber = json.tracking_number;
-        const shipmentId = json.label_id;
-        const carrierCode = json.carrier_code;
-
-        console.log(
-          "Shipment: ",
-          shipmentId,
-          "Tracking Number: ",
-          trackingNumber
-        );
-
-        order.update({ shipmentId, trackingNumber, carrierCode });
-        order.update({
-          trackingEnabled: trackPackage(trackingNumber, carrierCode),
-        });
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-//track order
 
 //update stock
 const updateInventory = async (session) => {

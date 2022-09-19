@@ -1,6 +1,5 @@
 require("dotenv");
 const router = require("express").Router();
-const request = require("request-promise");
 
 //products
 const Product = require("../../db").product;
@@ -11,15 +10,11 @@ const CustomerOrders = require("../../db").customerOrders;
 //stripe
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
-//email
-const nodemailer = require("nodemailer");
-const { google } = require("googleapis");
-const OAuth2 = google.auth.OAuth2;
-
 //auth
 const validateSession = require("../../middleware/validate-session");
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
-const Meta = require("../../db").meta;
+const { createLabel } = require("../../utils/package");
+const { trackPackage } = require("../../utils/tracking");
 
 ////////////////////////////////////////////////
 // GET STRIPE SESSIONS
@@ -44,6 +39,7 @@ router.get("/:page/:limit", validateSessionAdmin, async (req, res) => {
     for (order of ordersTemp) {
       //stripe
       const session = await stripe.checkout.sessions.retrieve(order.sessionId);
+
       const items = await stripe.checkout.sessions.listLineItems(
         order.sessionId,
         { limit: 5 }
@@ -136,6 +132,44 @@ router.post("/lineItems/:limit", validateSessionAdmin, async (req, res) => {
 });
 
 ////////////////////////////////////////////////
+// GET LABEL FOR ORDER
+////////////////////////////////////////////////
+router.get("/label/:id", validateSessionAdmin, async (req, res) => {
+  try {
+    const order = await Orders.findOne({ where: { id: req.params.id } });
+
+    //get stripe  session
+    const session = await stripe.checkout.sessions.retrieve(order.sessionId);
+
+    const response = createLabel(session, order);
+    res.status(200).json(response);
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+});
+
+////////////////////////////////////////////////
+// TRACK ORDER
+////////////////////////////////////////////////
+router.get("/track/:id", validateSessionAdmin, async (req, res) => {
+  try {
+    const order = await Orders.findOne({ where: { id: req.params.id } });
+
+    if (!order?.trackingNumber || !order?.carrierCode)
+      return res.status(200).json({
+        err: "Need Both a tracking number and carrier code to track package",
+      });
+
+    order.update({
+      trackingEnabled: trackPackage(order?.carrierCode, order?.trackingNumber),
+    });
+    res.status(200).json({ order });
+  } catch (err) {
+    res.status(500).json({ err });
+  }
+});
+
+////////////////////////////////////////////////
 // UPDATE ORDER
 ////////////////////////////////////////////////
 router.put("/:id", validateSessionAdmin, async (req, res) => {
@@ -163,15 +197,16 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
     if (order) {
       const order = await Orders.findOne({ where: { id: id } });
 
-      if (!order.trackingEnabled)
-        return res
-          .status(405)
-          .json({ err: "Tracking must be enabled in order to cancel order" });
+      // if (!order.trackingEnabled)
+      //   return res
+      //     .status(405)
+      //     .json({ err: "Tracking must be enabled in order to cancel order" });
 
       if (
         !(
           order.status === "Waiting to be Fulfilled" ||
-          order.status === "Invalid Address"
+          order.status === "Invalid Address" ||
+          order.status === "Label Created"
         )
       )
         return res

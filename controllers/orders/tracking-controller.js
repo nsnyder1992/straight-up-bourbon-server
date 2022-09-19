@@ -6,8 +6,8 @@ const request = require("request-promise");
 const Orders = require("../../db").orders;
 const CustomerOrders = require("../../db").customerOrders;
 
-//email
-const nodemailer = require("nodemailer");
+//stripe
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
 //auth
 const validateSession = require("../../middleware/validate-session");
@@ -110,36 +110,23 @@ router.get("/:id", validateSessionAdmin, async (req, res) => {
 ////////////////////////////////////////////////
 // TRACKING WEBHOOK
 ////////////////////////////////////////////////
-router.post("/:user/:pwd", async (req, res) => {
-  const { user, pwd } = req.params;
-
+router.post("/webhook/", async (req, res) => {
   try {
-    let valid = false;
-    if (req.headers["user-agent"] == "ShipEngine/v1") valid = true;
-
-    let auth = false;
-    if (user === process.env.TRACK_USER && pwd === process.env.TRACK_PWD)
-      auth = true;
-
-    if (valid && auth) {
+    if (req.headers["user-agent"] == "ShipEngine/v1") {
       console.log(req.body);
+
       const order = await Orders.findOne({
         where: { trackingNumber: req.body.data.tracking_number },
       });
 
-      const status = req.body.data.status_description;
+      const session = await stripe.checkout.sessions.retrieve(order.sessionId);
 
-      switch (status.toLowerCase()) {
-        case "accepted":
-          order.update({ isFulfilled: true });
-          break;
-        case "in transit":
-          order.update({ isShipped: true });
-          break;
-        case "delivered":
-          order.update({ isComplete: true });
-          break;
-      }
+      const status = req.body.data.status_description;
+      const statusCode = req.body.data.status_code;
+
+      order.update({ status });
+
+      sendStatusEmail(order.id, session.customer_email, status, statusCode);
 
       console.log(order);
 
@@ -152,5 +139,117 @@ router.post("/:user/:pwd", async (req, res) => {
     res.status(500).json({ err });
   }
 });
+
+////////////////////////////////////////////////
+// TEST TRACKING EMAILS
+////////////////////////////////////////////////
+router.post("/email/test/", validateSessionAdmin, async (req, res) => {
+  try {
+    const { email, status, statusCode } = req.body;
+    sendStatusEmail("TEST", email, status, statusCode);
+
+    res.status(200).json({ msg: "success" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
+  }
+});
+
+const sendStatusEmail = (orderId, email, status, statusCode) => {
+  let title;
+  let message;
+  let titleMeta;
+  let emailMeta;
+  let orderStatus = `Order number: ${orderId}\nStatus: ${status}`;
+  let salutation =
+    "If you have any questions reply to this email and we will get back with you\n\nThanks!\n\nLuke & JP";
+
+  try {
+    switch (statusCode) {
+      case "AC":
+        titleMeta = Meta.findOne({
+          where: { path: "Tracking-Accepted", type: "email_title" },
+        });
+        emailMeta = Meta.findOne({
+          where: { path: "Tracking-Accepted", type: "email_message" },
+        });
+        title = "Straight Up Bourbon Order - ";
+        message = `Your order has been accepted by the carrier.`;
+        break;
+
+      case "IT":
+        titleMeta = Meta.findOne({
+          where: { path: "Tracking-Transit", type: "email_title" },
+        });
+        emailMeta = Meta.findOne({
+          where: { path: "Tracking-Transit", type: "email_message" },
+        });
+        title = "Straight Up Bourbon Order - ";
+        message = `Your order is in transit!`;
+        break;
+
+      case "DE":
+        titleMeta = Meta.findOne({
+          where: { path: "Tracking-Delivered", type: "email_title" },
+        });
+        emailMeta = Meta.findOne({
+          where: { path: "Tracking-Delivered", type: "email_message" },
+        });
+        title = "Straight Up Bourbon Order - ";
+        message = `Your order has been delivered.`;
+        break;
+
+      case "EX":
+        titleMeta = Meta.findOne({
+          where: { path: "Tracking-Error", type: "email_title" },
+        });
+        emailMeta = Meta.findOne({
+          where: { path: "Tracking-Error", type: "email_message" },
+        });
+        title = "Straight Up Bourbon Order - ";
+        message = `Something went wrong with your delivery.`;
+        break;
+
+      case "UN":
+        titleMeta = Meta.findOne({
+          where: { path: "Tracking-Unknown", type: "email_title" },
+        });
+        emailMeta = Meta.findOne({
+          where: { path: "Tracking-Unknown", type: "email_message" },
+        });
+        title = "Straight Up Bourbon Order - ";
+        message = `Status Unknown.`;
+        break;
+
+      case "AT":
+        titleMeta = Meta.findOne({
+          where: { path: "Tracking-Attempt", type: "email_title" },
+        });
+        emailMeta = Meta.findOne({
+          where: { path: "Tracking-Attempt", type: "email_message" },
+        });
+        title = "Straight Up Bourbon Order - Attempted";
+        message = `A Delivery Attempt has been made, but you weren't available.`;
+        break;
+      default:
+        return;
+    }
+
+    const salutationMeta = Meta.findOne({
+      where: { path: "*", type: "email_salutation" },
+    });
+
+    if (titleMeta?.message) title = titleMeta.message;
+    if (emailMeta?.message) message = emailMeta?.message;
+    if (salutationMeta?.message) salutation = salutationMeta?.message;
+
+    title += ` ${status} (Order #${orderId})`;
+    message += `\n\n${orderStatus}\\n\\n${salutation}`;
+
+    sendEmail(email, title, message);
+  } catch (err) {
+    throw err;
+  }
+};
 
 module.exports = router;
