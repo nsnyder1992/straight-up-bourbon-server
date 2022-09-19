@@ -49,7 +49,6 @@ router.post("/create", getSession, async (req, res) => {
       if (prod.numItems < product.quantity) {
         return res.status(200).json({
           err: `Not enough stock for the order: ${product.product.name} only has ${prod.numItems} left. Please update cart to amount before continuing`,
-          outOfStock,
         });
       }
 
