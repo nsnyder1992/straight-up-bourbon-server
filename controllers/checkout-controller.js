@@ -187,7 +187,8 @@ const validateAddress = async (session, order) => {
       console.log("ADDRESSES: ", matchedAddress);
 
       if (addresses[0].status === "verified") {
-        return createLabel(session, order);
+        // return createLabel(session, order);
+        return;
       }
 
       order.update({ status: "Invalid Address" });

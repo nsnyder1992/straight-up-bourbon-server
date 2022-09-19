@@ -3,7 +3,7 @@ const request = require("request-promise");
 const { trackPackage } = require("./tracking");
 
 //create createLabel
-const createLabel = async (session, order, weight) => {
+const createLabel = async (session, order) => {
   try {
     const address = session.shipping.address;
     const shipTo = {
@@ -39,19 +39,13 @@ const createLabel = async (session, order, weight) => {
         service_code: "ups_ground",
         ship_to: shipTo,
         ship_from: shipFrom,
-        // packages: [
-        //   {
-        //     weight: { value: 20, unit: "ounce" },
-        //     dimensions: { height: 6, width: 12, length: 12, unit: "inch" },
-        //   },
-        // ],
+        packages: [
+          {
+            weight: { value: order.weight, unit: "ounce" },
+          },
+        ],
       },
     };
-
-    if (weight)
-      shipment.shipment.packages = [
-        { weight: { value: weight, unit: "ounce" } },
-      ];
 
     const body = JSON.stringify(shipment);
 

@@ -16,6 +16,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    weight: {
+      type: DataTypes.INTEGER,
+    },
     carrierCode: {
       type: DataTypes.STRING,
     },
