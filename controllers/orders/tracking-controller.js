@@ -248,6 +248,7 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
 
     sendEmail(email, title, message);
   } catch (err) {
+    console.log(err);
     throw err;
   }
 };
