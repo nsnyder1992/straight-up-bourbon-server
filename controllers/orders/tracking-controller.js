@@ -153,6 +153,9 @@ router.post("/webhook/", async (req, res) => {
 router.post("/email/test/", validateSessionAdmin, async (req, res) => {
   try {
     const { email, status, statusCode } = req.body;
+
+    console.log("TEST EMAIL:", email, status, statusCode);
+
     sendStatusEmail("TEST", email, status, statusCode);
 
     res.status(200).json({ msg: "success" });
@@ -253,6 +256,7 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
     title += ` ${status} (Order #${orderId})`;
     message += `\n\n${orderStatus}\n\n${salutation}`;
 
+    console.log("EMAIL:", title, message);
     sendEmail(email, title, message);
   } catch (err) {
     console.log(err);
