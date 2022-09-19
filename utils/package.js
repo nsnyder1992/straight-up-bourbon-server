@@ -33,9 +33,9 @@ const createLabel = async (session, order) => {
     console.log("SHIP TO: ", shipTo);
     console.log("SHIP FROM: ", shipFrom);
 
-    const shipment = {
+    const body = JSON.stringify({
       shipment: {
-        service_code: "ups",
+        carrier_code: "ups",
         service_code: "ups_ground",
         ship_to: shipTo,
         ship_from: shipFrom,
@@ -45,9 +45,7 @@ const createLabel = async (session, order) => {
           },
         ],
       },
-    };
-
-    const body = JSON.stringify(shipment);
+    });
 
     var options = {
       method: "POST",
