@@ -126,11 +126,13 @@ const fulfillOrder = async (session) => {
   try {
     const { products } = await updateInventory(session);
 
+    const email = session.customer_details.email;
+
     const order = await Orders.create({
       sessionId: session.id,
       status: "Waiting to be Fulfilled",
       trackingEnabled: false,
-      email: session.customer_email,
+      email: email ? email : "No Email Provided",
     });
 
     console.log("PRODUCTS RESPONSE: ", products);
@@ -214,7 +216,7 @@ const validateAddress = async (session, order) => {
 
       title += ` (Order #${order.id})`;
       message += salutation;
-      sendEmail(session.customer_email, title, message);
+      sendEmail(session.customer_details.email, title, message);
     });
   } catch (err) {
     console.log(err);

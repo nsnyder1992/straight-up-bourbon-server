@@ -126,7 +126,12 @@ router.post("/webhook/", async (req, res) => {
 
       order.update({ status });
 
-      sendStatusEmail(order.id, session.customer_email, status, statusCode);
+      sendStatusEmail(
+        order.id,
+        session.customer_details.email,
+        status,
+        statusCode
+      );
 
       console.log(order);
 
