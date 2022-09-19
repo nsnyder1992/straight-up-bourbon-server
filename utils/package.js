@@ -58,36 +58,33 @@ const createLabel = async (session, order) => {
       body,
     };
 
-    await request(options)
-      .then((response) => {
-        const json = JSON.parse(response);
-        console.log("SHIPENGINE LABEL:", json);
-        const trackingNumber = json.tracking_number;
-        const shipmentId = json.label_id;
-        const carrierCode = json.carrier_code;
+    const response = await request(options).catch((err) => {
+      console.log(err);
+      return { err };
+    });
 
-        console.log(
-          "Shipment: ",
-          shipmentId,
-          "Tracking Number: ",
-          trackingNumber
-        );
+    const json = JSON.parse(response);
+    console.log("SHIPENGINE LABEL:", json);
+    const trackingNumber = json.tracking_number;
+    const shipmentId = json.label_id;
+    const carrierCode = json.carrier_code;
 
-        order.update({
-          shipmentId,
-          trackingNumber,
-          carrierCode,
-          status: "Label Created",
-        });
-        order.update({
-          trackingEnabled: trackPackage(trackingNumber, carrierCode),
-        });
+    console.log("Shipment: ", shipmentId, "Tracking Number: ", trackingNumber);
 
-        return { order };
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    await order.update({
+      shipmentId,
+      trackingNumber,
+      carrierCode,
+      status: "Label Created",
+    });
+
+    const trackingEnabled = await trackPackage(trackingNumber, carrierCode);
+
+    await order.update({
+      trackingEnabled,
+    });
+
+    return { order };
   } catch (err) {
     console.log(err);
   }
