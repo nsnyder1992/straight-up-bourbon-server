@@ -51,6 +51,8 @@ app.get("/test", (req, res) => {
   res.send("Bourbon test");
 });
 
+app.use(express.static("public"));
+
 ////////////////////////////////////////////////
 //Exposed Routes (Protected inside the controller)
 ////////////////////////////////////////////////
