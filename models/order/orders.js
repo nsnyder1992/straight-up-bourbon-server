@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     email: {
-      type: DataTypes.BOOLEAN,
+      type: DataTypes.STRING,
       allowNull: false,
     },
     carrierCode: {
