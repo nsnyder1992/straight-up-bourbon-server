@@ -132,9 +132,9 @@ router.post("/lineItems/:limit", validateSessionAdmin, async (req, res) => {
 });
 
 ////////////////////////////////////////////////
-// GET LABEL FOR ORDER
+// CREATE LABEL FOR ORDER
 ////////////////////////////////////////////////
-router.get("/create/label/:id", validateSessionAdmin, async (req, res) => {
+router.post("/create/label/:id", validateSessionAdmin, async (req, res) => {
   try {
     const order = await Orders.findOne({ where: { id: req.params.id } });
 
@@ -150,9 +150,9 @@ router.get("/create/label/:id", validateSessionAdmin, async (req, res) => {
 });
 
 ////////////////////////////////////////////////
-// TRACK ORDER
+// ENABLE TRACKING FOR ORDER
 ////////////////////////////////////////////////
-router.get("/create/track/:id", validateSessionAdmin, async (req, res) => {
+router.post("/enable/tracking/:id", validateSessionAdmin, async (req, res) => {
   try {
     const order = await Orders.findOne({ where: { id: req.params.id } });
 
