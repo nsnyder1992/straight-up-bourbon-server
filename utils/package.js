@@ -69,7 +69,7 @@ const createLabel = async (session, order, weight) => {
     await request(options)
       .then((response) => {
         const json = JSON.parse(response);
-        console.log(json);
+        console.log("SHIPENGINE LABEL:", json);
         const trackingNumber = json.tracking_number;
         const shipmentId = json.label_id;
         const carrierCode = json.carrier_code;

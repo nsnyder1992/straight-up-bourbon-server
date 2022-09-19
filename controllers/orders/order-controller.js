@@ -144,6 +144,7 @@ router.get("/label/:id", validateSessionAdmin, async (req, res) => {
     const response = createLabel(session, order);
     res.status(200).json(response);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ err });
   }
 });
