@@ -16,8 +16,7 @@ const trackPackage = async (carrierCode, trackingNumber) => {
 
     const response = await request(options);
 
-    const json = JSON.parse(response);
-    return json.statusCode == 204;
+    return response.statusCode == 204;
   } catch (err) {
     console.log(err);
     return false;
