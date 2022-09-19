@@ -5,6 +5,7 @@ const request = require("request-promise");
 //products
 const Orders = require("../../db").orders;
 const CustomerOrders = require("../../db").customerOrders;
+const Meta = require("../../db").meta;
 
 //stripe
 const stripe = require("stripe")(process.env.STRIPE_SECRET);
@@ -12,6 +13,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 //auth
 const validateSession = require("../../middleware/validate-session");
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
+const { sendEmail } = require("../../utils/email");
 
 ////////////////////////////////////////////////
 // TRACK SHIPMENT BY LABEL

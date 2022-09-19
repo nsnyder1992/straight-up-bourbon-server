@@ -161,9 +161,15 @@ router.post("/enable/tracking/:id", validateSessionAdmin, async (req, res) => {
         err: "Need Both a tracking number and carrier code to track package",
       });
 
-    order.update({
-      trackingEnabled: trackPackage(order?.carrierCode, order?.trackingNumber),
+    const trackingEnabled = await trackPackage(
+      order?.carrierCode,
+      order?.trackingNumber
+    );
+
+    await order.update({
+      trackingEnabled,
     });
+
     res.status(200).json({ order });
   } catch (err) {
     res.status(500).json({ err });
