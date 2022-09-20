@@ -123,7 +123,7 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
         productId: product.id,
         size: key,
         numItems: req.body.stock[key],
-        weight: Math.floor(req.body.weight * 100),
+        weight: Math.floor(req.body.weights[key] * 100),
         stripePriceId: stripeSizePrice[key],
       });
     }
@@ -250,7 +250,7 @@ const updateProduct = async (req, res) => {
       productId: req.params.id,
       size: key,
       numItems: req.body.stock[key],
-      weight: Math.floor(req.body.weight * 100),
+      weight: Math.floor(req.body.weights[key] * 100),
     };
 
     if (stripePriceIds) stockUpdate.stripePriceId = stripePriceIds[key];
