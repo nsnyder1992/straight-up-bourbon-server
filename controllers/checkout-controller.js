@@ -109,98 +109,109 @@ router.post("/create", getSession, async (req, res) => {
 const getShippingOptions = async (totalCost, totalWeight) => {
   let shipping_options = [];
 
-  const freeShipping = Meta.findOne({
-    where: { path: "Free Shipping", type: "free_shipping" },
-  });
+  try {
+    const freeShipping = Meta.findOne({
+      where: { path: "Free Shipping", type: "free_shipping" },
+    });
 
-  if (freeShipping) {
-    console.log(totalCost, freeShipping.message);
-    if (totalCost > freeShipping.message) {
-      const min = await Meta.findOne({
-        where: { path: rate.path, type: "shipping_min" },
-      });
+    if (freeShipping) {
+      console.log(totalCost, freeShipping);
+      if (totalCost > freeShipping.message) {
+        const min = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_min" },
+        });
 
-      const max = await Meta.findOne({
-        where: { path: rate.path, type: "shipping_max" },
-      });
+        const max = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_max" },
+        });
 
-      shipping_options.push({
-        shipping_rate_data: {
-          type: "fixed_amount",
-          fixed_amount: {
-            amount: 0,
-            currency: "usd",
-          },
-          display_name: rate.path,
-          delivery_estimate: {
-            minimum: {
-              unit: "business_day",
-              value: min?.message ? min.message : 2,
+        shipping_options.push({
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: {
+              amount: 0,
+              currency: "usd",
             },
-            unit: "business_day",
-            value: max?.message ? max.message : 5,
+            display_name: rate.path,
+            delivery_estimate: {
+              minimum: {
+                unit: "business_day",
+                value: min?.message ? min.message : 2,
+              },
+              unit: "business_day",
+              value: max?.message ? max.message : 5,
+            },
           },
-        },
-      });
-    }
+        });
 
-    return shipping_options;
+        return shipping_options;
+      }
+    }
+  } catch (err) {
+    console.log(err);
   }
 
-  const rates = await Meta.findAll({ where: { type: "shipping_rate" } });
+  try {
+    const rates = await Meta.findAll({ where: { type: "shipping_rate" } });
 
-  for (let rate of rates) {
-    try {
-      const min = await Meta.findOne({
-        where: { path: rate.path, type: "shipping_min" },
-      });
+    for (let rate of rates) {
+      try {
+        const min = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_min" },
+        });
 
-      const max = await Meta.findOne({
-        where: { path: rate.path, type: "shipping_max" },
-      });
+        const max = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_max" },
+        });
 
-      if (!min || !max) continue;
+        if (!min || !max) continue;
 
-      const minWeight = await Meta.findOne({
-        where: { path: rate.path, type: "shipping_min_weight" },
-      });
+        const minWeight = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_min_weight" },
+        });
 
-      const maxWeight = await Meta.findOne({
-        where: { path: rate.path, type: "shipping_max_weight" },
-      });
+        const maxWeight = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_max_weight" },
+        });
 
-      if (!min && !max) {
-        console.log(minWeight.message, totalWeight, maxWeight.message);
-        if (totalWeight > maxWeight.message || totalWeight <= minWeight.message)
-          continue;
-      }
+        if (!min && !max) {
+          console.log(minWeight.message, totalWeight, maxWeight.message);
+          if (
+            totalWeight > maxWeight.message ||
+            totalWeight <= minWeight.message
+          )
+            continue;
+        }
 
-      if (!min) {
-        console.log(totalWeight, minWeight.message);
-        if (totalWeight <= minWeight.message) continue;
-      }
+        if (!min) {
+          console.log(totalWeight, minWeight.message);
+          if (totalWeight <= minWeight.message) continue;
+        }
 
-      shipping_options.push({
-        shipping_rate_data: {
-          type: "fixed_amount",
-          fixed_amount: {
-            amount: Math.round(rate.message * 100),
-            currency: "usd",
-          },
-          display_name: rate.path,
-          delivery_estimate: {
-            minimum: {
-              unit: "business_day",
-              value: min.message,
+        shipping_options.push({
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: {
+              amount: Math.round(rate.message * 100),
+              currency: "usd",
             },
-            unit: "business_day",
-            value: max.message,
+            display_name: rate.path,
+            delivery_estimate: {
+              minimum: {
+                unit: "business_day",
+                value: min.message,
+              },
+              unit: "business_day",
+              value: max.message,
+            },
           },
-        },
-      });
-    } catch (err) {
-      console.log(err);
+        });
+      } catch (err) {
+        console.log(err);
+      }
     }
+  } catch (err) {
+    console.log(err);
   }
 
   return shipping_options;

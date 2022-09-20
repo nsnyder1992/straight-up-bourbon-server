@@ -75,12 +75,27 @@ router.post("/by/path/", (req, res) => {
 });
 
 //////////////////////////////////////////////////////////////////////
-// GET META LIKE PATH
+// GET META BY TYPE
 //////////////////////////////////////////////////////////////////////
 router.post("/by/type/", (req, res) => {
   Meta.findAll({
     where: {
       type: req.body.type,
+    },
+  })
+    .then((metas) => {
+      res.status(200).json(metas);
+    })
+    .catch((err) => res.status(500).json({ err: err }));
+});
+
+//////////////////////////////////////////////////////////////////////
+// GET META BY TYPES
+//////////////////////////////////////////////////////////////////////
+router.post("/by/types/", (req, res) => {
+  Meta.findAll({
+    where: {
+      type: req.body.types,
     },
   })
     .then((metas) => {
