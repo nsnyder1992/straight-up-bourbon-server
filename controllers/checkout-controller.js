@@ -114,6 +114,7 @@ const getShippingOptions = async (totalCost, totalWeight) => {
   });
 
   if (freeShipping) {
+    console.log(totalCost, freeShipping.message);
     if (totalCost > freeShipping.message) {
       const min = await Meta.findOne({
         where: { path: rate.path, type: "shipping_min" },
@@ -169,11 +170,14 @@ const getShippingOptions = async (totalCost, totalWeight) => {
       });
 
       if (!min && !max) {
-        if (totalWeight > maxWeight || totalWeight <= minWeight) continue;
+        console.log(minWeight.message, totalWeight, maxWeight.message);
+        if (totalWeight > maxWeight.message || totalWeight <= minWeight.message)
+          continue;
       }
 
       if (!min) {
-        if (totalWeight <= minWeight) continue;
+        console.log(totalWeight, minWeight.message);
+        if (totalWeight <= minWeight.message) continue;
       }
 
       shipping_options.push({
