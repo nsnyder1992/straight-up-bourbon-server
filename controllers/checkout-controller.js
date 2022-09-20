@@ -115,7 +115,7 @@ const getShippingOptions = async (totalCost, totalWeight) => {
     });
 
     if (freeShipping) {
-      console.log(totalCost, freeShipping);
+      console.log("FREE COMP", totalCost, freeShipping);
       if (totalCost > freeShipping.message) {
         const min = await Meta.findOne({
           where: { path: rate.path, type: "shipping_min" },
@@ -189,6 +189,13 @@ const getShippingOptions = async (totalCost, totalWeight) => {
           console.log(totalWeight, minWeight.message);
           if (totalWeight <= minWeight.message) continue;
         }
+
+        console.log(
+          "TOTAL WEIGHT COMP",
+          minWeight.message,
+          totalCost,
+          maxWeight.message
+        );
 
         shipping_options.push({
           shipping_rate_data: {
