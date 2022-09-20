@@ -246,6 +246,7 @@ const updateProduct = async (req, res) => {
       where: { productId: req.params.id, size: key },
     });
 
+    console.log(req.body);
     let stockUpdate = {
       productId: req.params.id,
       size: key,
