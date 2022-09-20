@@ -245,6 +245,7 @@ router.post("/webhook", async (req, res) => {
     console.log({ err });
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
+
   // Handle the checkout.session.completed event
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
@@ -255,6 +256,18 @@ router.post("/webhook", async (req, res) => {
     const { order } = await fulfillOrder(session);
 
     return res.status(200).json({ order });
+  }
+
+  // Handle the checkout.session.completed event
+  if (event.type === "charge.refunded") {
+    const refund = event.data.object;
+
+    console.log("REFUND:", refund);
+
+    // Fulfill the purchase...
+    await refundInventory(refund);
+
+    return res.status(200);
   }
 
   res.status(200);
@@ -430,6 +443,54 @@ const updateInventory = async (session) => {
     }
     return products;
   } catch (err) {
+    return err;
+  }
+};
+
+//update stock
+const refundInventory = async (refund) => {
+  let products;
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      refund.payment_intent,
+      {
+        expand: ["invoice"],
+      }
+    );
+
+    products = paymentIntent.invoice.lines.data;
+    await fetch(
+      `https://api.stripe.com/v1/checkout/sessions/${sessionId}/line_items?limit=25 `,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET}`,
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((json) => (products = json.data))
+      .catch((err) => console.log(err));
+
+    for (let product of products) {
+      let item = await Stock.findOne({
+        where: { stripePriceId: product.price.id },
+      });
+
+      item = JSON.parse(JSON.stringify(item));
+
+      console.log("CHECKOUT UPDATE ITEMS", item, product.quantity);
+
+      const updateStockItem = {
+        numItems: item.numItems + product.quantity,
+        size: item.size,
+      };
+
+      await Stock.update(updateStockItem, { where: { id: item.id } });
+    }
+    return products;
+  } catch (err) {
+    console.log(err);
     return err;
   }
 };
