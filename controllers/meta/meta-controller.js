@@ -97,7 +97,7 @@ router.post("/by/types/", (req, res) => {
     where: {
       type: req.body.types,
     },
-    order: [["path"]],
+    order: [["path"], ["id"]],
   })
     .then((metas) => {
       res.status(200).json(metas);
