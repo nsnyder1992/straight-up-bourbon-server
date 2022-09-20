@@ -176,6 +176,13 @@ const getShippingOptions = async (totalCost, totalWeight) => {
           where: { path: rate.path, type: "shipping_max_weight" },
         });
 
+        console.log(
+          "TOTAL WEIGHT COMP",
+          minWeight.message,
+          totalCost,
+          maxWeight.message
+        );
+
         if (!min && !max) {
           console.log(minWeight.message, totalWeight, maxWeight.message);
           if (
@@ -189,13 +196,6 @@ const getShippingOptions = async (totalCost, totalWeight) => {
           console.log(totalWeight, minWeight.message);
           if (totalWeight <= minWeight.message) continue;
         }
-
-        console.log(
-          "TOTAL WEIGHT COMP",
-          minWeight.message,
-          totalCost,
-          maxWeight.message
-        );
 
         shipping_options.push({
           shipping_rate_data: {
