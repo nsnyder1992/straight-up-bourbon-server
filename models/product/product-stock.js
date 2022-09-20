@@ -8,6 +8,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    weight: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     stripePriceId: {
       type: DataTypes.STRING,
       allowNull: false,
