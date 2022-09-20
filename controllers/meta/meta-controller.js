@@ -35,7 +35,9 @@ router.post("/", validateSessionAdmin, (req, res) => {
 // GET ALL META
 //////////////////////////////////////////////////////////////////////
 router.get("/", async (req, res) => {
-  Meta.findAll()
+  Meta.findAll({
+    order: [["id", "DESC"]],
+  })
     .then((meta) => res.status(200).json({ meta }))
     .catch((err) => res.status(500).json({ err: err }));
 });
