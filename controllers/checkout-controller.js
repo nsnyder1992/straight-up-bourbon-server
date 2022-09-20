@@ -110,19 +110,20 @@ const getShippingOptions = async (totalCost, totalWeight) => {
   let shipping_options = [];
 
   try {
+    const freePath = "Free Shipping";
     const freeShipping = await Meta.findOne({
-      where: { path: "Free Shipping", type: "free_shipping" },
+      where: { path: freePath, type: "free_shipping" },
     });
 
     if (freeShipping) {
       console.log("FREE COMP", totalCost, freeShipping?.message);
       if (freeShipping?.message && totalCost > freeShipping.message) {
         const min = await Meta.findOne({
-          where: { path: rate.path, type: "shipping_min" },
+          where: { path: freePath, type: "shipping_min" },
         });
 
         const max = await Meta.findOne({
-          where: { path: rate.path, type: "shipping_max" },
+          where: { path: freePath, type: "shipping_max" },
         });
 
         shipping_options.push({
@@ -132,7 +133,7 @@ const getShippingOptions = async (totalCost, totalWeight) => {
               amount: 0,
               currency: "usd",
             },
-            display_name: rate.path,
+            display_name: freePath,
             delivery_estimate: {
               minimum: {
                 unit: "business_day",
@@ -196,6 +197,7 @@ const getShippingOptions = async (totalCost, totalWeight) => {
           continue;
         }
 
+        console.log("ADDING SHIPPING OPTION", rate.path);
         shipping_options.push({
           shipping_rate_data: {
             type: "fixed_amount",

@@ -35,8 +35,8 @@ const createLabel = async (session, order) => {
 
     const body = JSON.stringify({
       shipment: {
-        carrier_code: "ups",
-        service_code: "ups_ground",
+        carrier_code: order.carrierCode,
+        service_code: order.carrierService,
         ship_to: shipTo,
         ship_from: shipFrom,
         packages: [
