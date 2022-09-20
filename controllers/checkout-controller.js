@@ -7,6 +7,7 @@ const fetch = require("node-fetch");
 const request = require("request-promise");
 
 //products
+const Product = require("../db").product;
 const Stock = require("../db").stock;
 const Orders = require("../db").orders;
 const User = require("../db").user;
@@ -38,6 +39,7 @@ router.post("/create", getSession, async (req, res) => {
     //build line items
     let line_items = [];
     let totalWeight = 0;
+    let totalCost = 0;
     for (let product of products) {
       if (product.quantity <= 0) continue;
 
@@ -45,6 +47,12 @@ router.post("/create", getSession, async (req, res) => {
 
       let prod = await Stock.findOne({
         where: { productId: product.product.id, size: product.product.size },
+      });
+
+      let p = await Product.findOne({
+        where: {
+          id: product.product.id,
+        },
       });
 
       if (prod.numItems < product.quantity) {
@@ -55,8 +63,8 @@ router.post("/create", getSession, async (req, res) => {
 
       prod = JSON.parse(JSON.stringify(prod));
 
-      console.log(prod);
       totalWeight += prod.weight;
+      totalCost += p.cost;
 
       line_items.push({
         price: prod.stripePriceId,
@@ -65,6 +73,7 @@ router.post("/create", getSession, async (req, res) => {
     }
 
     totalWeight /= 100;
+    totalCost /= 100;
 
     let stripeQuery = {
       payment_method_types: paymentTypes,
@@ -77,42 +86,7 @@ router.post("/create", getSession, async (req, res) => {
       cancel_url: `${CLIENTURL}/cancel?session_id={CHECKOUT_SESSION_ID}}`,
     };
 
-    const rates = await Meta.findAll({ where: { type: "shipping_rate" } });
-
-    let shipping_options = [];
-    for (let rate of rates) {
-      try {
-        const min = await Meta.findOne({
-          where: { path: rate.path, type: "shipping_min" },
-        });
-
-        const max = await Meta.findOne({
-          where: { path: rate.path, type: "shipping_max" },
-        });
-
-        shipping_options.push({
-          shipping_rate_data: {
-            amount: Math.round(rate.message * 100),
-            currency: "usd",
-            display_name: rate.path,
-            delivery_estimate: {
-              minimum: {
-                business: true,
-                unit: "day",
-                value: min ? min.message : 2,
-              },
-              maximum: {
-                business: true,
-                unit: "day",
-                value: max ? max.message : 5,
-              },
-            },
-          },
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    }
+    let shipping_options = await getShippingOptions(totalCost, totalWeight);
 
     if (shipping_options.length > 0)
       stripeQuery.shipping_options = shipping_options;
@@ -131,6 +105,102 @@ router.post("/create", getSession, async (req, res) => {
     res.status(500).json({ err });
   }
 });
+
+const getShippingOptions = async (totalCost, totalWeight) => {
+  let shipping_options = [];
+
+  const freeShipping = Meta.findOne({
+    where: { path: "Free Shipping", type: "free_shipping" },
+  });
+
+  if (freeShipping) {
+    if (totalCost > freeShipping.message) {
+      const min = await Meta.findOne({
+        where: { path: rate.path, type: "shipping_min" },
+      });
+
+      const max = await Meta.findOne({
+        where: { path: rate.path, type: "shipping_max" },
+      });
+
+      shipping_options.push({
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: {
+            amount: 0,
+            currency: "usd",
+          },
+          display_name: rate.path,
+          delivery_estimate: {
+            minimum: {
+              unit: "business_day",
+              value: min?.message ? min.message : 2,
+            },
+            unit: "business_day",
+            value: max?.message ? max.message : 5,
+          },
+        },
+      });
+    }
+
+    return shipping_options;
+  }
+
+  const rates = await Meta.findAll({ where: { type: "shipping_rate" } });
+
+  for (let rate of rates) {
+    try {
+      const min = await Meta.findOne({
+        where: { path: rate.path, type: "shipping_min" },
+      });
+
+      const max = await Meta.findOne({
+        where: { path: rate.path, type: "shipping_max" },
+      });
+
+      if (!min || !max) continue;
+
+      const minWeight = await Meta.findOne({
+        where: { path: rate.path, type: "shipping_min_weight" },
+      });
+
+      const maxWeight = await Meta.findOne({
+        where: { path: rate.path, type: "shipping_max_weight" },
+      });
+
+      if (!min && !max) {
+        if (totalWeight > maxWeight || totalWeight <= minWeight) continue;
+      }
+
+      if (!min) {
+        if (totalWeight <= minWeight) continue;
+      }
+
+      shipping_options.push({
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: {
+            amount: Math.round(rate.message * 100),
+            currency: "usd",
+          },
+          display_name: rate.path,
+          delivery_estimate: {
+            minimum: {
+              unit: "business_day",
+              value: min.message,
+            },
+            unit: "business_day",
+            value: max.message,
+          },
+        },
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  return shipping_options;
+};
 
 ////////////////////////////////////////////////
 // CHECKOUT WEBHOOK LISTENER
@@ -171,6 +241,14 @@ const fulfillOrder = async (session) => {
     const { products } = await updateInventory(session);
 
     const email = session.customer_details.email;
+
+    const selectedShippingRate = await stripe.shippingRates.retrieve(
+      session.shipping_cost.shipping_rate
+    );
+
+    console.log("SHIPPING RATE:", selectedShippingRate);
+
+    //get carrier code associated with
 
     const order = await Orders.create({
       sessionId: session.id,
