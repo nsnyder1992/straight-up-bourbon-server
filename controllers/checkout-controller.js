@@ -37,6 +37,7 @@ router.post("/create", getSession, async (req, res) => {
 
     //build line items
     let line_items = [];
+    let totalWeight = 0;
     for (let product of products) {
       if (product.quantity <= 0) continue;
 
@@ -55,12 +56,15 @@ router.post("/create", getSession, async (req, res) => {
       prod = JSON.parse(JSON.stringify(prod));
 
       console.log(prod);
+      totalWeight += prod.weight;
 
       line_items.push({
         price: prod.stripePriceId,
         quantity: product.quantity,
       });
     }
+
+    totalWeight /= 100;
 
     let stripeQuery = {
       payment_method_types: paymentTypes,
@@ -72,6 +76,46 @@ router.post("/create", getSession, async (req, res) => {
       success_url: `${CLIENTURL}/success?session_id={CHECKOUT_SESSION_ID}}`,
       cancel_url: `${CLIENTURL}/cancel?session_id={CHECKOUT_SESSION_ID}}`,
     };
+
+    const rates = await Meta.findAll({ where: { type: "shipping_rate" } });
+
+    let shipping_options = [];
+    for (let rate of rates) {
+      try {
+        const min = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_min" },
+        });
+
+        const max = await Meta.findOne({
+          where: { path: rate.path, type: "shipping_max" },
+        });
+
+        shipping_options.push({
+          shipping_rate_data: {
+            amount: Math.round(rate.message * 100),
+            currency: "usd",
+            display_name: rate.path,
+            delivery_estimate: {
+              minimum: {
+                business: true,
+                unit: "day",
+                value: min ? min.message : 2,
+              },
+              maximum: {
+                business: true,
+                unit: "day",
+                value: max ? max.message : 5,
+              },
+            },
+          },
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    if (shipping_options.length > 0)
+      stripeQuery.shipping_options = shipping_options;
 
     if (req.user) {
       stripeQuery.customer = req.user.stripeCustomerId;
