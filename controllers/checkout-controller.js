@@ -269,15 +269,40 @@ const fulfillOrder = async (session) => {
 
     const email = session.customer_details.email;
 
-    console.log("SHIPPING RATE:", session);
-
-    //get carrier code associated with
     const order = await Orders.create({
       sessionId: session.id,
       status: "Waiting to be Fulfilled",
       trackingEnabled: false,
       email: email ? email : "No Email Provided",
     });
+
+    //get carrier code associated with rate
+    try {
+      let shipSession = await stripe.checkout.sessions.retrieve(
+        order.sessionId,
+        {
+          expand: ["shipping_cost.shipping_rate"],
+        }
+      );
+
+      const rateName = shipSession.shipping_cost.shipping_rate.display_name;
+
+      const codeMeta = await Meta.findOne({
+        where: { path: rateName, type: "shipping_carrier" },
+      });
+      const serviceMeta = await Meta.findOne({
+        where: { path: rateName, type: "shipping_service" },
+      });
+
+      if (codeMeta && serviceMeta) {
+        let carrierCode = codeMeta?.message;
+        let carrierService = serviceMeta?.message;
+
+        order.update({ carrierCode, carrierService });
+      }
+    } catch (err) {
+      console.log(err);
+    }
 
     console.log("PRODUCTS RESPONSE: ", products);
 
