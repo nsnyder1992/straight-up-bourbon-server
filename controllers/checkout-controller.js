@@ -110,13 +110,13 @@ const getShippingOptions = async (totalCost, totalWeight) => {
   let shipping_options = [];
 
   try {
-    const freeShipping = Meta.findOne({
+    const freeShipping = await Meta.findOne({
       where: { path: "Free Shipping", type: "free_shipping" },
     });
 
     if (freeShipping) {
       console.log("FREE COMP", totalCost, freeShipping);
-      if (totalCost > freeShipping.message) {
+      if (freeShipping?.message && totalCost > freeShipping.message) {
         const min = await Meta.findOne({
           where: { path: rate.path, type: "shipping_min" },
         });
@@ -179,16 +179,17 @@ const getShippingOptions = async (totalCost, totalWeight) => {
         if (!minWeight && !maxWeight) {
           console.log(minWeight.message, totalWeight, maxWeight.message);
           if (
-            totalWeight > maxWeight.message ||
-            totalWeight <= minWeight.message
+            maxWeight?.message &&
+            minWeight?.message &&
+            (totalWeight > maxWeight.message ||
+              totalWeight <= minWeight.message)
           )
             continue;
-        }
-
-        if (!minWeight) {
+        } else if (!minWeight) {
           console.log(totalWeight, minWeight.message);
-          if (totalWeight <= minWeight.message) continue;
+          if (minWeight?.message && totalWeight <= minWeight.message) continue;
         } else {
+          console.log("NO MIN OR MAX WEIGHT RETURNING EARLY");
           continue;
         }
 
