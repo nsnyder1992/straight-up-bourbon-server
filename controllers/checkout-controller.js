@@ -459,18 +459,6 @@ const refundInventory = async (refund) => {
     );
 
     products = paymentIntent.invoice.lines.data;
-    await fetch(
-      `https://api.stripe.com/v1/checkout/sessions/${sessionId}/line_items?limit=25 `,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${process.env.STRIPE_SECRET}`,
-        },
-      }
-    )
-      .then((response) => response.json())
-      .then((json) => (products = json.data))
-      .catch((err) => console.log(err));
 
     for (let product of products) {
       let item = await Stock.findOne({
