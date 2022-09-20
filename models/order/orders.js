@@ -22,6 +22,9 @@ module.exports = (sequelize, DataTypes) => {
     carrierCode: {
       type: DataTypes.STRING,
     },
+    carrierService: {
+      type: DataTypes.STRING,
+    },
     trackingNumber: {
       type: DataTypes.STRING,
     },
