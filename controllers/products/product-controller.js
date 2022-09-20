@@ -123,6 +123,7 @@ router.post("/create", validateSessionAdmin, async (req, res) => {
         productId: product.id,
         size: key,
         numItems: req.body.stock[key],
+        weight: Math.floor(req.body.weight * 100),
         stripePriceId: stripeSizePrice[key],
       });
     }
@@ -249,6 +250,7 @@ const updateProduct = async (req, res) => {
       productId: req.params.id,
       size: key,
       numItems: req.body.stock[key],
+      weight: Math.floor(req.body.weight * 100),
     };
 
     if (stripePriceIds) stockUpdate.stripePriceId = stripePriceIds[key];
@@ -259,7 +261,7 @@ const updateProduct = async (req, res) => {
         where: { productId: req.params.id, size: key },
       });
     } else {
-      console.log("--CREATE NEW STOOCK ITEM-- Item: ", stockUpdate);
+      console.log("--CREATE NEW STOCK ITEM-- Item: ", stockUpdate);
       stockUpdate.stripePriceId = await createStripePriceIdBySize(req, key);
       await Stock.create(stockUpdate);
     }
