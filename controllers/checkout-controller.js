@@ -269,14 +269,9 @@ const fulfillOrder = async (session) => {
 
     const email = session.customer_details.email;
 
-    const selectedShippingRate = await stripe.shippingRates.retrieve(
-      session.shipping_cost.shipping_rate
-    );
-
-    console.log("SHIPPING RATE:", selectedShippingRate);
+    console.log("SHIPPING RATE:", session);
 
     //get carrier code associated with
-
     const order = await Orders.create({
       sessionId: session.id,
       status: "Waiting to be Fulfilled",
