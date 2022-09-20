@@ -138,8 +138,10 @@ const getShippingOptions = async (totalCost, totalWeight) => {
                 unit: "business_day",
                 value: min?.message ? min.message : 2,
               },
-              unit: "business_day",
-              value: max?.message ? max.message : 5,
+              maximum: {
+                unit: "business_day",
+                value: max?.message ? max.message : 5,
+              },
             },
           },
         });
@@ -201,8 +203,10 @@ const getShippingOptions = async (totalCost, totalWeight) => {
                 unit: "business_day",
                 value: min.message,
               },
-              unit: "business_day",
-              value: max.message,
+              maximum: {
+                unit: "business_day",
+                value: max.message,
+              },
             },
           },
         });
