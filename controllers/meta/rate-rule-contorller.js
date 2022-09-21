@@ -6,6 +6,23 @@ const Rule = require("../../db").rules;
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
 
 ///////////////////////////////////////////////////////////////
+//GET RATE RULE BY RATE ID
+///////////////////////////////////////////////////////////////
+router.delete("/rate/:id", validateSessionAdmin, async (req, res) => {
+  try {
+    //destroy all descriptions
+    let rules = await Rule.findAll({
+      where: { rateId: req.params.id },
+      order: ["id"],
+    });
+    res.status(200).json({ rules });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
+  }
+});
+
+///////////////////////////////////////////////////////////////
 //DELETE RATE RULE
 ///////////////////////////////////////////////////////////////
 router.delete("/:id", validateSessionAdmin, async (req, res) => {
