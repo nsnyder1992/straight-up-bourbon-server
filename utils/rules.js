@@ -3,6 +3,7 @@ const Rate = require("../db").rate;
 const Rules = require("../db").rules;
 
 const subCheck = (varaible, check, value) => {
+  console.log("CHECK", varaible, check, value);
   switch (check) {
     case ">":
       return varaible > value;
@@ -22,6 +23,7 @@ const subCheck = (varaible, check, value) => {
 };
 
 const ruleChain = (rule, result, variables) => {
+  console.log("CHAIN", rule.type, result, variables[rule.varaible], rule.value);
   switch (rule.type) {
     case "&&":
       return (
@@ -43,6 +45,7 @@ const checkRules = async (rateId, varaibles) => {
 
   let result = true;
   for (let rule of rules) {
+    console.log("PROCESSING:", rule.id);
     result = ruleChain(rule, result, varaibles);
   }
   return result;
@@ -55,6 +58,7 @@ const getShippingRates = async (variables) => {
     let apply = [];
     for (let rate of rates) {
       let result = checkRules(rate.id, variables);
+      console.log("PROCESSED RULES:", rate.id, variables, result);
 
       if (result === true) {
         if (rate.value == 0) {
@@ -64,6 +68,8 @@ const getShippingRates = async (variables) => {
         apply.push(rate);
       }
     }
+
+    console.log("APPLY", apply);
 
     let shipping_options = [];
 
@@ -75,7 +81,7 @@ const getShippingRates = async (variables) => {
             amount: rate.value,
             currency: "usd",
           },
-          display_name: freePath,
+          display_name: rate.name,
           delivery_estimate: {
             minimum: {
               unit: "business_day",
@@ -90,6 +96,7 @@ const getShippingRates = async (variables) => {
       });
     }
 
+    console.log(shipping_options);
     return shipping_options;
   } catch (err) {
     console.log(err);
