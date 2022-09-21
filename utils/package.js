@@ -35,6 +35,7 @@ const createLabel = async (session, order) => {
 
     const body = JSON.stringify({
       shipment: {
+        label_image_id: process.env.SHIP_IMAGE,
         carrier_code: order.carrierCode,
         service_code: order.carrierService,
         ship_to: shipTo,
