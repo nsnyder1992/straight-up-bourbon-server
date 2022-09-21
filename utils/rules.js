@@ -48,48 +48,52 @@ const checkRules = (rateId, varaibles) => {
   return result;
 };
 
-const getShippingRates = (variables) => {
-  const rates = Rate.findAll({ where: { type: "shipping_rate" } });
+const getShippingRates = async (variables) => {
+  try {
+    const rates = Rate.findAll({ where: { type: "shipping_rate" } });
 
-  let apply = [];
-  for (let rate of rates) {
-    let result = checkRules(rate.id, variables);
+    let apply = [];
+    for (let rate of rates) {
+      let result = checkRules(rate.id, variables);
 
-    if (result === true) {
-      if (rate.value == 0) {
-        apply = [rate];
-        break;
+      if (result === true) {
+        if (rate.value == 0) {
+          apply = [rate];
+          break;
+        }
+        apply.push(rate);
       }
-      apply.push(rate);
     }
-  }
 
-  let shipping_options = [];
+    let shipping_options = [];
 
-  for (let rate of apply) {
-    shipping_options.push({
-      shipping_rate_data: {
-        type: "fixed_amount",
-        fixed_amount: {
-          amount: rate.value,
-          currency: "usd",
-        },
-        display_name: freePath,
-        delivery_estimate: {
-          minimum: {
-            unit: "business_day",
-            value: rate.minDays,
+    for (let rate of apply) {
+      shipping_options.push({
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: {
+            amount: rate.value,
+            currency: "usd",
           },
-          maximum: {
-            unit: "business_day",
-            value: rate.maxDays,
+          display_name: freePath,
+          delivery_estimate: {
+            minimum: {
+              unit: "business_day",
+              value: rate.minDays,
+            },
+            maximum: {
+              unit: "business_day",
+              value: rate.maxDays,
+            },
           },
         },
-      },
-    });
-  }
+      });
+    }
 
-  return shipping_options;
+    return shipping_options;
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 exports.getShippingRates = getShippingRates;
