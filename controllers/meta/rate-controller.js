@@ -152,10 +152,10 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       };
 
       if (rule) {
-        console.log("--PRODUCT UPDATE-- Item: ", stockUpdate);
+        console.log("--RULE UPDATE-- ", ruleUpdate);
         await rule.update(ruleUpdate);
       } else {
-        console.log("--CREATE NEW STOCK ITEM-- Item: ", stockUpdate);
+        console.log("--CREATE NEW RULE -- ", ruleUpdate);
         await Rules.create(ruleUpdate);
       }
     }
