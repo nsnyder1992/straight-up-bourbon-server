@@ -6,50 +6,6 @@ const Rules = require("../../db").rules;
 //auth
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
 
-////////////////////////////////////////////////
-// CREATE RATE
-////////////////////////////////////////////////
-router.post("/", validateSessionAdmin, async (req, res) => {
-  try {
-    const rate = Rate.create({
-      name: req.body.name,
-      rate: req.body.rate,
-      carrierCode: req.body.carrierCode,
-      carrierService: req.body.carrierService,
-      type: req.body.type,
-    });
-
-    for (let rule of req.body.rules) {
-      await Rules.create({
-        rateId: rate.id,
-        type: rule.type,
-        variable: rule.variable,
-        function: rule.rule,
-        value: rule.value,
-      });
-    }
-
-    const query = {
-      where: { id: rate.id },
-      include: [
-        {
-          model: Rules,
-        },
-      ],
-    };
-
-    const resRate = await Rate.findOne(query);
-
-    res.status(200).json({
-      rate: resRate,
-      message: "Rate successfully created",
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: err });
-  }
-});
-
 //////////////////////////////////////////////////////////////////////
 // GET ALL RATES
 //////////////////////////////////////////////////////////////////////
@@ -94,6 +50,50 @@ router.get("/:id", (req, res) => {
       res.status(200).json({ rate });
     })
     .catch((err) => res.status(500).json({ err: err }));
+});
+
+////////////////////////////////////////////////
+// CREATE RATE
+////////////////////////////////////////////////
+router.post("/", validateSessionAdmin, async (req, res) => {
+  try {
+    const rate = Rate.create({
+      name: req.body.name,
+      rate: req.body.rate,
+      carrierCode: req.body.carrierCode,
+      carrierService: req.body.carrierService,
+      type: req.body.type,
+    });
+
+    for (let rule of req.body.rules) {
+      await Rules.create({
+        rateId: rate.id,
+        type: rule.type,
+        variable: rule.variable,
+        function: rule.rule,
+        value: rule.value,
+      });
+    }
+
+    const query = {
+      where: { id: rate.id },
+      include: [
+        {
+          model: Rules,
+        },
+      ],
+    };
+
+    const resRate = await Rate.findOne(query);
+
+    res.status(200).json({
+      rate: resRate,
+      message: "Rate successfully created",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err });
+  }
 });
 
 //////////////////////////////////////////////////////////////////////
