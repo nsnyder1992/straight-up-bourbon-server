@@ -60,12 +60,12 @@ router.get("/:id", (req, res) => {
 ////////////////////////////////////////////////
 router.post("/", validateSessionAdmin, async (req, res) => {
   try {
-    const rate = Rate.create({
-      name: req.body.name,
-      rate: req.body.rate,
-      carrierCode: req.body.carrierCode,
-      carrierService: req.body.carrierService,
-      type: req.body.type,
+    const rate = await Rate.create({
+      name: req.body.rate.name,
+      rate: req.body.rate.rate,
+      carrierCode: req.body.rate.carrierCode,
+      carrierService: req.body.rate.carrierService,
+      type: req.body.rate.type,
     });
 
     for (let rule of req.body.rules) {
