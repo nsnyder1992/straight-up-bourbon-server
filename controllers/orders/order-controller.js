@@ -219,7 +219,7 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
 
       response = await cancelOrder(order, session);
 
-      res.status(200).json({ response, refund });
+      res.status(200).json(response);
     } else {
       response = "Not Authorized";
       res.status(403).json(response);

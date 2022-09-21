@@ -266,9 +266,9 @@ router.post("/webhook", async (req, res) => {
     console.log("REFUND:", refund);
 
     // Refund Purchase...
-    await refundOrder(refund);
+    const { order } = await refundOrder(refund);
 
-    return res.status(200);
+    return res.status(200).json({ order });
   }
 
   res.status(200);
