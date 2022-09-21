@@ -72,6 +72,9 @@ router.post("/create", getSession, async (req, res) => {
       });
     }
 
+    totalWeight /= 100;
+    totalCost /= 100;
+
     let stripeQuery = {
       payment_method_types: paymentTypes,
       mode: "payment",
@@ -83,9 +86,6 @@ router.post("/create", getSession, async (req, res) => {
       cancel_url: `${CLIENTURL}/cancel?session_id={CHECKOUT_SESSION_ID}}`,
       metadata: { totalWeight },
     };
-
-    totalWeight /= 100;
-    totalCost /= 100;
 
     let shipping_options = await getShippingOptions(totalCost, totalWeight);
 
