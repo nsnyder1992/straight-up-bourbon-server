@@ -50,7 +50,7 @@ const checkRules = (rateId, varaibles) => {
 
 const getShippingRates = async (variables) => {
   try {
-    const rates = Rate.findAll({ where: { type: "shipping_rate" } });
+    const rates = await Rate.findAll({ where: { type: "shipping_rate" } });
 
     let apply = [];
     for (let rate of rates) {

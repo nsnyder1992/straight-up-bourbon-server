@@ -65,6 +65,8 @@ router.post("/", validateSessionAdmin, async (req, res) => {
       rate: req.body.rate.rate,
       carrierCode: req.body.rate.carrierCode,
       carrierService: req.body.rate.carrierService,
+      minDays: req.body.minDays,
+      maxDays: req.body.maxDays,
       type: req.body.rate.type,
     });
 
@@ -111,6 +113,8 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       rate: req.body.rate,
       carrierCode: req.body.carrierCode,
       carrierService: req.body.carrierService,
+      minDays: req.body.minDays,
+      maxDays: req.body.maxDays,
       type: req.body.type,
     });
 
