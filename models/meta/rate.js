@@ -14,6 +14,12 @@ module.exports = (sequelize, DataTypes) => {
     carrierService: {
       type: DataTypes.STRING,
     },
+    minDays: {
+      type: DataTypes.STRING,
+    },
+    maxDays: {
+      type: DataTypes.STRING,
+    },
     type: {
       type: DataTypes.STRING,
     },
