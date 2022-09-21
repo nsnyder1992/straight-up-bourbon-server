@@ -72,9 +72,6 @@ router.post("/create", getSession, async (req, res) => {
       });
     }
 
-    totalWeight /= 100;
-    totalCost /= 100;
-
     let stripeQuery = {
       payment_method_types: paymentTypes,
       mode: "payment",
@@ -86,6 +83,9 @@ router.post("/create", getSession, async (req, res) => {
       cancel_url: `${CLIENTURL}/cancel?session_id={CHECKOUT_SESSION_ID}}`,
       metadata: { totalWeight },
     };
+
+    totalWeight /= 100;
+    totalCost /= 100;
 
     let shipping_options = await getShippingOptions(totalCost, totalWeight);
 
@@ -290,6 +290,13 @@ const fulfillOrder = async (session) => {
       email: email ? email : "No Email Provided",
     });
 
+    const user = await User.findOne({
+      where: { stripeCustomerId: session.customer },
+    });
+
+    if (user)
+      await customerOrders.create({ orderId: order.id, userId: user.id });
+
     if (session?.metadata?.totalWeight)
       order.update({ weight: session?.metadata?.totalWeight });
 
@@ -324,13 +331,6 @@ const fulfillOrder = async (session) => {
     console.log("PRODUCTS RESPONSE: ", products);
 
     await validateAddress(session, order);
-
-    const user = await User.findOne({
-      where: { stripeCustomerId: session.customer },
-    });
-
-    if (user)
-      await customerOrders.create({ orderId: order.id, userId: user.id });
 
     console.log("Creating Order", session);
     return { order };
