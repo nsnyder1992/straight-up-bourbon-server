@@ -59,7 +59,7 @@ router.get("/:page/:limit", async (req, res) => {
   const query = {
     limit: limit,
     offset: offset,
-    order: [["placement", "ASC"]],
+    order: [[Rules, id]],
     include: [
       {
         model: Rules,
