@@ -163,4 +163,4 @@ const getRates = async (session, weight) => {
   }
 };
 
-exports.createLabel = getRates;
+exports.getRates = getRates;
