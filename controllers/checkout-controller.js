@@ -84,6 +84,7 @@ router.post("/create", getSession, async (req, res) => {
       },
       success_url: `${CLIENTURL}/success?session_id={CHECKOUT_SESSION_ID}}`,
       cancel_url: `${CLIENTURL}/cancel?session_id={CHECKOUT_SESSION_ID}}`,
+      metadata: { totalWeight },
     };
 
     let shipping_options = await getShippingOptions(totalCost, totalWeight);
@@ -288,6 +289,9 @@ const fulfillOrder = async (session) => {
       trackingEnabled: false,
       email: email ? email : "No Email Provided",
     });
+
+    if (session?.metadata?.totalWeight)
+      order.update({ weight: session?.metadata?.totalWeight });
 
     //get carrier code associated with rate
     try {
