@@ -147,7 +147,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
         rateId: rate.id,
         type: req.body.rules[key].type,
         variable: req.body.rules[key].variable,
-        function: req.body.rules[key].rule,
+        function: req.body.rules[key].function,
         value: req.body.rules[key].value,
       };
 
