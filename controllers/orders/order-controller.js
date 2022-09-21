@@ -260,11 +260,6 @@ router.put("/admin/cancel/:id", validateSessionAdmin, async (req, res) => {
         .status(400)
         .json({ err: "No order with that Id and stripe id" });
 
-    const refund = await stripe.refunds.create({
-      payment_intent: session.payment_intent,
-      metadata: { orderId: order.id },
-    });
-
     response = await cancelOrder(order, session);
 
     res.status(200).json(response);
