@@ -10,12 +10,15 @@ const validateSessionAdmin = require("../../middleware/validate-session-admin");
 // GET ALL RATES
 //////////////////////////////////////////////////////////////////////
 router.get("/:page/:limit", async (req, res) => {
+  let limit = req.params.limit;
+  let offset = req.params.page;
+
   //get rates from pagination and createdAt Descending order
   //most recent rates will be sent first
   const query = {
     limit: limit,
     offset: offset,
-    order: [[Rules, id]],
+    order: [[Rules, "id"]],
     include: [
       {
         model: Rules,
