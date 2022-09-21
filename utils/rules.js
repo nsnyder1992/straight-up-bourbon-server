@@ -68,6 +68,7 @@ const getShippingRates = async (variables) => {
     let shipping_options = [];
 
     for (let rate of apply) {
+      rate = JSON.parse(JSON.stringify(rate));
       shipping_options.push({
         shipping_rate_data: {
           type: "fixed_amount",
