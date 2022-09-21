@@ -73,7 +73,7 @@ const getShippingRates = async (variables) => {
         shipping_rate_data: {
           type: "fixed_amount",
           fixed_amount: {
-            amount: rate.value,
+            amount: rate.rate,
             currency: "usd",
           },
           display_name: rate.name,
