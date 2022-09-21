@@ -19,6 +19,8 @@ const order = require("./controllers/orders/order-controller");
 const customerOrders = require("./controllers/orders/customer-orders-controller");
 const meta = require("./controllers/meta/meta-controller");
 const icons = require("./controllers/meta/icon-controller");
+const rate = require("./controllers/meta/rate-controller");
+const rules = require("./controllers/meta/rate-rule-controller");
 
 //aux controllers
 const checkout = require("./controllers/checkout-controller");
@@ -63,6 +65,8 @@ app.use("/track", tracking);
 app.use("/youtube", youtube);
 app.use("/meta", meta);
 app.use("/icon", icons);
+app.use("/rate", rate);
+app.use("/rate/rule", rules);
 
 app.use(
   "/track/webhook",

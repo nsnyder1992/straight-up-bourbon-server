@@ -49,6 +49,8 @@ db.descriptions = sequelize.import("./models/product/product-descriptions");
 db.orders = sequelize.import("./models/order/orders");
 db.meta = sequelize.import("./models/meta/meta");
 db.icons = sequelize.import("./models/meta/icons");
+db.rate = sequelize.import("./models/meta/rate");
+db.rules = sequelize.import("./models/meta/rate-rules");
 
 //Define through tables for M-N associations later
 db.customerOrders = sequelize.define("customer_orders", {
@@ -84,6 +86,10 @@ const createAssoc = async () => {
   //users have orders
   await db.user.belongsToMany(db.orders, { through: db.customerOrders });
   await db.orders.belongsToMany(db.user, { through: db.customerOrders });
+
+  //rate has rules
+  await db.rate.hasMany(db.rules);
+  await db.rules.belongsTo(db.rate);
 };
 
 //add createAssoc function to db object
@@ -100,6 +106,8 @@ const syncDB = async () => {
   await db.customerOrders.sync();
   await db.meta.sync();
   await db.icons.sync();
+  await db.rate.sync();
+  await db.rules.sync();
 
   //the rest of the table
   await db.sequelize.sync();
