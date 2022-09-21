@@ -204,11 +204,6 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
     if (order) {
       const order = await Orders.findOne({ where: { id: id } });
 
-      // if (!order.trackingEnabled)
-      //   return res
-      //     .status(405)
-      //     .json({ err: "Tracking must be enabled in order to cancel order" });
-
       if (
         !(
           order.status === "Waiting to be Fulfilled" ||
@@ -222,14 +217,7 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
 
       const session = await stripe.checkout.sessions.retrieve(order.sessionId);
 
-      const refund = await stripe.refunds.create({
-        payment_intent: session.payment_intent,
-      });
-
-      response = await Orders.update(
-        { status: "Canceled" },
-        { where: { id: id } }
-      );
+      response = await cancelOrder(order, session);
 
       res.status(200).json({ response, refund });
     } else {
@@ -242,6 +230,20 @@ router.put("/cancel/:id", validateSession, async (req, res) => {
   }
 });
 
+const cancelOrder = async (order, session) => {
+  const refund = await stripe.refunds.create({
+    payment_intent: session.payment_intent,
+    metadata: { orderId: order.id },
+  });
+
+  const response = await Orders.update(
+    { status: "Canceled" },
+    { where: { id: id } }
+  );
+
+  return { response, refund };
+};
+
 ////////////////////////////////////////////////
 // CANCEL ORDER
 ////////////////////////////////////////////////
@@ -250,10 +252,7 @@ router.put("/admin/cancel/:id", validateSessionAdmin, async (req, res) => {
   const { stripeId } = req.body;
 
   try {
-    let response;
-
     const order = await Orders.findOne({ where: { id } });
-
     const session = await stripe.checkout.sessions.retrieve(order.sessionId);
 
     if (session.payment_intent != stripeId)
@@ -263,14 +262,12 @@ router.put("/admin/cancel/:id", validateSessionAdmin, async (req, res) => {
 
     const refund = await stripe.refunds.create({
       payment_intent: session.payment_intent,
+      metadata: { orderId: order.id },
     });
 
-    response = await Orders.update(
-      { status: "Canceled" },
-      { where: { id: id } }
-    );
+    response = await cancelOrder(order, session);
 
-    res.status(200).json({ response, refund });
+    res.status(200).json(response);
   } catch (err) {
     console.log(err);
     res.status(500).json({ err });
