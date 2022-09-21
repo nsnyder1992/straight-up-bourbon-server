@@ -68,23 +68,28 @@ const getShippingRates = async (variables) => {
     let shipping_options = [];
 
     for (let rate of apply) {
-      console.log("rate", rate.name, rate.value, rate.maxDays, rate.minDays);
+      const name = rate.name;
+      const amount = rate.rate;
+      const maxDays = rate.maxDays;
+      const minDays = rate.minDays;
+
+      console.log("rate", name, amount, maxDays, minDays);
       shipping_options.push({
         shipping_rate_data: {
           type: "fixed_amount",
           fixed_amount: {
-            amount: rate.rate,
+            amount: amount,
             currency: "usd",
           },
-          display_name: rate.name,
+          display_name: name,
           delivery_estimate: {
             minimum: {
               unit: "business_day",
-              value: rate.minDays,
+              value: minDays,
             },
             maximum: {
               unit: "business_day",
-              value: rate.maxDays,
+              value: maxDays,
             },
           },
         },
