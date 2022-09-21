@@ -264,8 +264,8 @@ router.post("/webhook", async (req, res) => {
 
     console.log("REFUND:", refund);
 
-    // Fulfill the purchase...
-    await refundInventory(refund);
+    // Refund Purchase...
+    await refundOrder(refund);
 
     return res.status(200);
   }
@@ -448,35 +448,33 @@ const updateInventory = async (session) => {
 };
 
 //update stock
-const refundInventory = async (refund) => {
-  let products;
+const refundOrder = async (refund) => {
   try {
-    const paymentIntent = await stripe.paymentIntents.retrieve(
-      refund.payment_intent,
-      {
-        expand: ["invoice"],
-      }
-    );
+    const orderId = refund?.metadata?.orderId;
 
-    products = paymentIntent.invoice.lines.data;
+    const order = Orders.findOne({ where: { id: orderId } });
+    order.update({
+      status: "Refunded",
+    });
+    // products = paymentIntent.invoice.lines.data;
 
-    for (let product of products) {
-      let item = await Stock.findOne({
-        where: { stripePriceId: product.price.id },
-      });
+    // for (let product of products) {
+    //   let item = await Stock.findOne({
+    //     where: { stripePriceId: product.price.id },
+    //   });
 
-      item = JSON.parse(JSON.stringify(item));
+    //   item = JSON.parse(JSON.stringify(item));
 
-      console.log("CHECKOUT UPDATE ITEMS", item, product.quantity);
+    //   console.log("CHECKOUT UPDATE ITEMS", item, product.quantity);
 
-      const updateStockItem = {
-        numItems: item.numItems + product.quantity,
-        size: item.size,
-      };
+    //   const updateStockItem = {
+    //     numItems: item.numItems + product.quantity,
+    //     size: item.size,
+    //   };
 
-      await Stock.update(updateStockItem, { where: { id: item.id } });
-    }
-    return products;
+    //   await Stock.update(updateStockItem, { where: { id: item.id } });
+    // }
+    return order;
   } catch (err) {
     console.log(err);
     return err;
