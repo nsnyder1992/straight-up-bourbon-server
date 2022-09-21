@@ -123,7 +123,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
     for (let rule of rules) {
       let deleted = true;
       for (let key of Object.keys(req.body.rules)) {
-        if (rule.id == key) {
+        if (rule.id == req.body.rules[key].id) {
           deleted = false;
           break;
         }

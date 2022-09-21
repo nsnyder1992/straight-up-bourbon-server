@@ -1,3 +1,5 @@
+const Rate = require("../db").rate;
+
 const Rules = require("../db").rules;
 
 const subCheck = (varaible, check, value) => {
@@ -44,4 +46,17 @@ const checkRules = (rateId, varaibles) => {
     result = ruleChain(rule, result, varaibles);
   }
   return result;
+};
+
+const getShippingRates = (variables) => {
+  const rates = Rate.findAll({ where: { type: "shipping_rate" } });
+
+  let apply = [];
+  for (let rate of rates) {
+    let result = checkRules(rate.id, variables);
+
+    if (result === true) apply.push(rate);
+  }
+
+  return apply;
 };
