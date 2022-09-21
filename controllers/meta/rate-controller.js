@@ -139,16 +139,16 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
     //update rules
     for (key of Object.keys(req.body.rules)) {
       const rule = await Rules.findOne({
-        where: { id: key },
+        where: { id: req.body.rules[key].id },
       });
 
       console.log(req.body);
       let ruleUpdate = {
         rateId: rate.id,
-        type: rule.type,
-        variable: rule.variable,
-        function: rule.rule,
-        value: rule.value,
+        type: req.body.rules[key].type,
+        variable: req.body.rules[key].variable,
+        function: req.body.rules[key].rule,
+        value: req.body.rules[key].value,
       };
 
       if (rule) {
@@ -156,7 +156,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
         await rule.update(ruleUpdate);
       } else {
         console.log("--CREATE NEW STOCK ITEM-- Item: ", stockUpdate);
-        await Stock.create(ruleUpdate);
+        await Rules.create(ruleUpdate);
       }
     }
 
