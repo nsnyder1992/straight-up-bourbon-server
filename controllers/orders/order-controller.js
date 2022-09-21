@@ -238,7 +238,7 @@ const cancelOrder = async (order, session) => {
 
   const response = await Orders.update(
     { status: "Canceled" },
-    { where: { id: id } }
+    { where: { id: order.id } }
   );
 
   return { response, refund };
