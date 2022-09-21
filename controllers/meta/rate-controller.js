@@ -116,7 +116,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
 
     //get rate rules
     let rules = await Rules.findAll({
-      where: { productId: req.params.id },
+      where: { rateId: req.params.id },
     });
 
     //delete rules not in query
