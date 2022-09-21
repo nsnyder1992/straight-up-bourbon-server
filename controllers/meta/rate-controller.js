@@ -24,7 +24,7 @@ router.post("/", validateSessionAdmin, async (req, res) => {
         rateId: rate.id,
         type: rule.type,
         variable: rule.variable,
-        function: rule.function,
+        function: rule.rule,
         value: rule.value,
       });
     }
@@ -131,6 +131,30 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
       await Rules.destroy({
         where: { id: rule.id },
       });
+    }
+
+    //update rules
+    for (key of Object.keys(req.body.rules)) {
+      const rule = await Rules.findOne({
+        where: { id: key },
+      });
+
+      console.log(req.body);
+      let ruleUpdate = {
+        rateId: rate.id,
+        type: rule.type,
+        variable: rule.variable,
+        function: rule.rule,
+        value: rule.value,
+      };
+
+      if (rule) {
+        console.log("--PRODUCT UPDATE-- Item: ", stockUpdate);
+        await rule.update(ruleUpdate);
+      } else {
+        console.log("--CREATE NEW STOCK ITEM-- Item: ", stockUpdate);
+        await Stock.create(ruleUpdate);
+      }
     }
 
     res.status(200).json({ rate });
