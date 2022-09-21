@@ -139,7 +139,7 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
     //update rules
     for (key of Object.keys(req.body.rules)) {
       const rule = await Rules.findOne({
-        where: { id: req.body.rules[key].id },
+        where: { id: req.body.rules[key].id ? req.body.rules[key].id : 0 },
       });
 
       console.log(req.body);
