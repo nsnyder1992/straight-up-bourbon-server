@@ -79,7 +79,7 @@ const createLabel = async (session, order) => {
       status: "Label Created",
     });
 
-    const trackingEnabled = await trackPackage(trackingNumber, carrierCode);
+    const trackingEnabled = await trackPackage(carrierCode, trackingNumber);
 
     await order.update({
       trackingEnabled,

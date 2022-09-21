@@ -126,7 +126,7 @@ router.post("/webhook/", async (req, res) => {
       const status = req.body.data.status_description;
       const statusCode = req.body.data.status_code;
 
-      order.update({ status });
+      order.update({ status, trackingEnabled: true });
 
       sendStatusEmail(
         order.id,
