@@ -38,8 +38,8 @@ const ruleChain = (rule, result, variables) => {
   }
 };
 
-const checkRules = (rateId, varaibles) => {
-  const rules = Rules.findAll({ where: { rateId }, order: [["id"]] });
+const checkRules = async (rateId, varaibles) => {
+  const rules = await Rules.findAll({ where: { rateId }, order: [["id"]] });
 
   let result = true;
   for (let rule of rules) {
