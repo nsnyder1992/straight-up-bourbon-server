@@ -8,7 +8,7 @@ const validateSessionAdmin = require("../../middleware/validate-session-admin");
 ///////////////////////////////////////////////////////////////
 //GET RATE RULE BY RATE ID
 ///////////////////////////////////////////////////////////////
-router.delete("/rate/:id", validateSessionAdmin, async (req, res) => {
+router.get("/rate/:id", validateSessionAdmin, async (req, res) => {
   try {
     //destroy all descriptions
     let rules = await Rule.findAll({
