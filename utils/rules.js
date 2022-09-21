@@ -55,8 +55,41 @@ const getShippingRates = (variables) => {
   for (let rate of rates) {
     let result = checkRules(rate.id, variables);
 
-    if (result === true) apply.push(rate);
+    if (result === true) {
+      if (rate.value == 0) {
+        apply = [rate];
+        break;
+      }
+      apply.push(rate);
+    }
   }
 
-  return apply;
+  let shipping_options = [];
+
+  for (let rate of apply) {
+    shipping_options.push({
+      shipping_rate_data: {
+        type: "fixed_amount",
+        fixed_amount: {
+          amount: rate.value,
+          currency: "usd",
+        },
+        display_name: freePath,
+        delivery_estimate: {
+          minimum: {
+            unit: "business_day",
+            value: rate.minDays,
+          },
+          maximum: {
+            unit: "business_day",
+            value: rate.maxDays,
+          },
+        },
+      },
+    });
+  }
+
+  return shipping_options;
 };
+
+exports.getShippingRates = getShippingRates;

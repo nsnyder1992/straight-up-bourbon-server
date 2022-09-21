@@ -22,6 +22,7 @@ const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 const getSession = require("../middleware/get-session");
 const { sendEmail } = require("../utils/email");
 const { createLabel } = require("../utils/package");
+const { getShippingRates } = require("../utils/rules");
 
 ////////////////////////////////////////////////
 // CREATE STRIPE CHECKOUT SESSION
@@ -87,7 +88,10 @@ router.post("/create", getSession, async (req, res) => {
       metadata: { totalWeight },
     };
 
-    let shipping_options = await getShippingOptions(totalCost, totalWeight);
+    let shipping_options = await getShippingRates({
+      total_cost: totalCost,
+      total_weight: totalWeight,
+    });
 
     if (shipping_options.length > 0)
       stripeQuery.shipping_options = shipping_options;
