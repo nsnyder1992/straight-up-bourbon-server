@@ -73,7 +73,6 @@ const getShippingRates = async (variables) => {
       const maxDays = rate.maxDays;
       const minDays = rate.minDays;
 
-      console.log("rate", name, amount, maxDays, minDays);
       shipping_options.push({
         shipping_rate_data: {
           type: "fixed_amount",
@@ -96,7 +95,6 @@ const getShippingRates = async (variables) => {
       });
     }
 
-    console.log("SHIPPING", shipping_options);
     return shipping_options;
   } catch (err) {
     console.log(err);
