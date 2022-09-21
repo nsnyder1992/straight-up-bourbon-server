@@ -2,39 +2,46 @@ const Rate = require("../db").rate;
 
 const Rules = require("../db").rules;
 
-const subCheck = (varaible, check, value) => {
-  console.log("CHECK", varaible, check, value);
+const subCheck = (variable, check, value) => {
+  console.log("CHECK", variable, check, value);
   switch (check) {
     case ">":
-      return varaible > value;
+      return variable > value;
     case "<":
-      return varaible < value;
+      return variable < value;
     case ">=":
-      return varaible >= value;
+      return variable >= value;
     case "<=":
-      return varaible <= value;
+      return variable <= value;
     case "==":
-      return varaible == value;
+      return variable == value;
     case "!=":
-      return varaible != value;
+      return variable != value;
     default:
       throw "not a check";
   }
 };
 
 const ruleChain = (rule, result, variables) => {
-  console.log("CHAIN", rule.type, result, variables[rule.varaible], rule.value);
+  console.log(
+    "CHAIN",
+    rule.type,
+    result,
+    rule.variable,
+    variables[rule.variable],
+    rule.value
+  );
   switch (rule.type) {
     case "&&":
       return (
-        result && subCheck(variables[rule.varaible], rule.function, rule.value)
+        result && subCheck(variables[rule.variable], rule.function, rule.value)
       );
     case "||":
       return (
-        result || subCheck(variables[rule.varaible], rule.function, rule.value)
+        result || subCheck(variables[rule.variable], rule.function, rule.value)
       );
     case "start":
-      return subCheck(variables[rule.varaible], rule.function, rule.value);
+      return subCheck(variables[rule.variable], rule.function, rule.value);
     default:
       throw "not a check";
   }
@@ -57,7 +64,7 @@ const getShippingRates = async (variables) => {
 
     let apply = [];
     for (let rate of rates) {
-      let result = checkRules(rate.id, variables);
+      let result = await checkRules(rate.id, variables);
       console.log("PROCESSED RULES:", rate.id, variables, result);
 
       if (result === true) {
