@@ -172,8 +172,8 @@ const sendStatusEmail = async (orderId, email, status, statusCode) => {
   let templateMeta;
   let titleMeta;
   let emailMeta;
-  let salutation =
-    "If you have any questions reply to this email and we will get back with you\n\nThanks!\n\nLuke & JP";
+  let salutation = "Thanks!";
+  let signage = "Luke & JP";
 
   try {
     switch (statusCode) {

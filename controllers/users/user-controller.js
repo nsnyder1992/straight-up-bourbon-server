@@ -125,6 +125,12 @@ router.post("/forgotPassword", (req, res) => {
     if (user === null) {
       res.status(403).send("email not in db");
     } else {
+      const token = crypto.randomBytes(20).toString("hex");
+      user.update({
+        resetPasswordToken: token,
+        resetPasswordExpires: Date.now() + 3600000,
+      });
+
       const titleMeta = Meta.findOne({
         where: { path: "Reset-Password", type: "email_title" },
       });
