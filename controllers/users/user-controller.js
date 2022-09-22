@@ -12,6 +12,7 @@ const validateSession = require("../../middleware/validate-session");
 //email
 const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
+const { sendGridEmail } = require("../../utils/email");
 const OAuth2 = google.auth.OAuth2;
 
 //stripe
@@ -123,65 +124,54 @@ router.post("/forgotPassword", (req, res) => {
     if (user === null) {
       res.status(403).send("email not in db");
     } else {
-      const token = crypto.randomBytes(20).toString("hex");
-      user.update({
-        resetPasswordToken: token,
-        resetPasswordExpires: Date.now() + 3600000,
+      const titleMeta = Meta.findOne({
+        where: { path: "Reset-Password", type: "email_title" },
       });
 
-      const oauth2Client = new OAuth2(
-        process.env.EMAIL_CLIENT_ID,
-        process.env.EMAIL_CLIENT_SECRET,
-        process.env.HOST
+      const emailMeta = Meta.findOne({
+        where: { path: "Reset-Password", type: "email_message" },
+      });
+
+      const templateMeta = Meta.findOne({
+        where: { path: "Reset-Password", type: "email_template" },
+      });
+
+      const salutationMeta = Meta.findOne({
+        where: { path: "*", type: "email_salutation" },
+      });
+
+      const signageMeta = Meta.findOne({
+        where: { path: "*", type: "email_signage" },
+      });
+
+      let title = "Reset Password";
+
+      let templateId = "d-41e07bd4e5624ca78113b831b54c2eee";
+
+      let message =
+        "Click Link below to Reset Password. If you did not request this link please email us back!";
+
+      let salutation = "Thanks!";
+
+      let signage = "Luke & JP";
+
+      if (templateMeta?.message) templateId = templateMeta?.message;
+      if (titleMeta?.message) title = titleMeta.message;
+      if (emailMeta?.message) message = emailMeta?.message;
+      if (salutationMeta?.message) salutation = salutationMeta?.message;
+      if (signageMeta?.message) signage = signageMeta?.message;
+
+      sendGridEmail(
+        templateId,
+        user.email,
+        title,
+        null,
+        null,
+        message,
+        `${process.env.CLIENT_HOST}/reset/${token}`,
+        salutation,
+        signage
       );
-
-      oauth2Client.setCredentials({
-        refresh_token: process.env.EMAIL_REFRESH_TOKEN,
-      });
-
-      const accessToken = await new Promise((resolve, reject) => {
-        oauth2Client.getAccessToken((err, token) => {
-          if (err) {
-            reject("Failed to create access token :(");
-          }
-          resolve(token);
-        });
-      });
-
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          type: "OAuth2",
-          user: process.env.EMAIL_ADDRESS,
-          pass: process.env.EMAIL_PASSWORD,
-          accessToken,
-          clientId: process.env.EMAIL_CLIENT_ID,
-          clientSecret: process.env.EMAIL_CLIENT_SECRET,
-          refreshToken: process.env.EMAIL_REFRESH_TOKEN,
-        },
-      });
-
-      const mailOptions = {
-        from: "straightupbourbon@gmail.com",
-        to: user.email,
-        subject: "Link to Reset Password",
-        text:
-          "You are receiving this email because you have requested to reset you password for your account. \n\n" +
-          "Please click on the following link, or paste it into your browser to complete the process within one hour of receiving: \n\n" +
-          `${process.env.CLIENT_HOST}/reset/${token} \n\n` +
-          "If you did not request this, please ignore this email and your password will remain unchanged. \n",
-      };
-
-      console.log("sending email");
-
-      transporter.sendMail(mailOptions, (err, response) => {
-        if (err) {
-          console.log("error: ", err);
-        } else {
-          console.log("success: ", response);
-          res.status(200).json("recovery email sent");
-        }
-      });
     }
   });
 });

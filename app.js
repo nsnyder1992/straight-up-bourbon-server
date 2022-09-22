@@ -1,15 +1,20 @@
 //environment
 require("dotenv").config();
-const path = require("path");
 
 //create an app
 const express = require("express");
 const app = express();
 
+//auth
+const expressBasicAuth = require("express-basic-auth");
+
 //database
 const db = require("./db");
 db.createAssoc(); //create associations
 db.sync(); //sync each table in order
+
+//test email
+const { sendGridEmail } = require("./utils/email");
 
 //controllers
 const user = require("./controllers/users/user-controller");
@@ -28,9 +33,6 @@ const checkout = require("./controllers/checkout-controller");
 const cloudinary = require("./controllers/cloudinary-controller");
 const youtube = require("./controllers/video-controller");
 const tracking = require("./controllers/orders/tracking-controller");
-const expressBasicAuth = require("express-basic-auth");
-const { sendTemplateEmail } = require("./utils/email");
-const e = require("express");
 
 //headers
 app.use(require("./middleware/headers"));
@@ -54,27 +56,6 @@ app.use(
 
 app.get("/test", (req, res) => {
   res.send("Bourbon test");
-});
-
-app.post("/test/email", (req, res) => {
-  const { email, title, message } = req.body;
-  sendTemplateEmail(email, title, message);
-  res.send("sent email");
-});
-
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "./utils"));
-
-app.get("/test/email/welcome", (req, res) => {
-  res.render("templates/tracking", {
-    meta: {
-      receiver: "nick",
-      message: "TEST",
-      orderNumber: "TEST",
-      title: "Track your order",
-      status: " has been shipped!",
-    },
-  });
 });
 
 app.use(express.static("public"));

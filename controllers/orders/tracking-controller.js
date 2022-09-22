@@ -13,7 +13,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 //auth
 const validateSession = require("../../middleware/validate-session");
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
-const { sendEmail } = require("../../utils/email");
+const { sendGridEmail } = require("../../utils/email");
 
 ////////////////////////////////////////////////
 // TRACK SHIPMENT BY LABEL
@@ -128,7 +128,7 @@ router.post("/webhook/", async (req, res) => {
 
       order.update({ status, trackingEnabled: true });
 
-      sendStatusEmail(
+      await sendStatusEmail(
         order.id,
         session.customer_details.email,
         status,
@@ -156,7 +156,7 @@ router.post("/email/test/", validateSessionAdmin, async (req, res) => {
 
     console.log("TEST EMAIL:", email, status, statusCode);
 
-    sendStatusEmail("TEST", email, status, statusCode);
+    await sendStatusEmail("TEST", email, status, statusCode);
 
     res.status(200).json({ msg: "success" });
   } catch (err) {
@@ -165,12 +165,13 @@ router.post("/email/test/", validateSessionAdmin, async (req, res) => {
   }
 });
 
-const sendStatusEmail = (orderId, email, status, statusCode) => {
+const sendStatusEmail = async (orderId, email, status, statusCode) => {
+  let templateId = "d-4a4687d326b8416faa466e2c0619e252";
   let title;
   let message;
+  let templateMeta;
   let titleMeta;
   let emailMeta;
-  let orderStatus = `Order number: ${orderId}\nStatus: ${status}`;
   let salutation =
     "If you have any questions reply to this email and we will get back with you\n\nThanks!\n\nLuke & JP";
 
@@ -183,8 +184,11 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
         emailMeta = Meta.findOne({
           where: { path: "Tracking-Accepted", type: "email_message" },
         });
+        templateMeta = Meta.findOne({
+          where: { path: "Tracking-Accepted", type: "email_template" },
+        });
         title = "Straight Up Bourbon Order - ";
-        message = `Your order has been accepted by the carrier.`;
+        status = "was accepted";
         break;
 
       case "IT":
@@ -194,8 +198,11 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
         emailMeta = Meta.findOne({
           where: { path: "Tracking-Transit", type: "email_message" },
         });
+        templateMeta = Meta.findOne({
+          where: { path: "Tracking-Transit", type: "email_template" },
+        });
         title = "Straight Up Bourbon Order - ";
-        message = `Your order is in transit!`;
+        status = "has shipped!";
         break;
 
       case "DE":
@@ -205,7 +212,14 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
         emailMeta = Meta.findOne({
           where: { path: "Tracking-Delivered", type: "email_message" },
         });
+        templateMeta = Meta.findOne({
+          where: {
+            path: "Tracking-Delivered",
+            type: "email_template",
+          },
+        });
         title = "Straight Up Bourbon Order - ";
+        status = "was delivered!";
         message = `Your order has been delivered.`;
         break;
 
@@ -216,8 +230,15 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
         emailMeta = Meta.findOne({
           where: { path: "Tracking-Error", type: "email_message" },
         });
+        templateMeta = Meta.findOne({
+          where: {
+            path: "Tracking-Error",
+            type: "email_template",
+          },
+        });
         title = "Straight Up Bourbon Order - ";
-        message = `Something went wrong with your delivery.`;
+        status = "Error";
+        message = `Something went wrong with your delivery. Please email us and we will try to determine what happend`;
         break;
 
       case "UN":
@@ -227,8 +248,14 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
         emailMeta = Meta.findOne({
           where: { path: "Tracking-Unknown", type: "email_message" },
         });
+        templateMeta = Meta.findOne({
+          where: {
+            path: "Tracking-Unknown",
+            type: "email_template",
+          },
+        });
         title = "Straight Up Bourbon Order - ";
-        message = `Status Unknown.`;
+        status = "status is unknown";
         break;
 
       case "AT":
@@ -238,7 +265,14 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
         emailMeta = Meta.findOne({
           where: { path: "Tracking-Attempt", type: "email_message" },
         });
+        templateMeta = Meta.findOne({
+          where: {
+            path: "Tracking-Attempt",
+            type: "email_template",
+          },
+        });
         title = "Straight Up Bourbon Order - Attempted";
+        status = "attempted delivery";
         message = `A Delivery Attempt has been made, but you weren't available.`;
         break;
       default:
@@ -249,15 +283,30 @@ const sendStatusEmail = (orderId, email, status, statusCode) => {
       where: { path: "*", type: "email_salutation" },
     });
 
+    const signageMeta = Meta.findOne({
+      where: { path: "*", type: "email_signage" },
+    });
+
+    if (templateMeta?.message) templateId = templateMeta?.message;
     if (titleMeta?.message) title = titleMeta.message;
     if (emailMeta?.message) message = emailMeta?.message;
     if (salutationMeta?.message) salutation = salutationMeta?.message;
+    if (signageMeta?.message) signage = signageMeta?.message;
 
-    title += ` ${status} (Order #${orderId})`;
-    message += `\n\n${orderStatus}\n\n${salutation}`;
+    title += ` (Order #${orderId})`;
 
     console.log("EMAIL:", title, message);
-    sendEmail(email, title, message);
+    await sendGridEmail(
+      templateId,
+      email,
+      title,
+      order.id,
+      status,
+      message,
+      null,
+      salutation,
+      signage
+    );
   } catch (err) {
     console.log(err);
     throw err;

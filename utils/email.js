@@ -2,7 +2,9 @@ require("dotenv");
 
 //email
 const nodemailer = require("nodemailer");
-const ejs = require("ejs");
+
+const mail = require("@sendgrid/mail");
+
 const { google } = require("googleapis");
 const OAuth2 = google.auth.OAuth2;
 
@@ -66,78 +68,62 @@ const sendEmail = async (email, title, message) => {
 
 exports.sendEmail = sendEmail;
 
-const getTransponder = async () => {
+const sendGridEmail = async (
+  templateId,
+  email,
+  title,
+  order,
+  status,
+  message,
+  link,
+  salutaion,
+  signage
+) => {
   try {
-    const oauth2Client = new OAuth2(
-      process.env.EMAIL_CLIENT_ID,
-      process.env.EMAIL_CLIENT_SECRET,
-      process.env.HOST
-    );
+    mail.setApiKey(process.env.SENDGRID_API_KEY);
 
-    oauth2Client.setCredentials({
-      refresh_token: process.env.EMAIL_REFRESH_TOKEN,
-    });
-
-    const accessToken = await new Promise((resolve, reject) => {
-      oauth2Client.getAccessToken((err, token) => {
-        if (err) {
-          console.log(err);
-          reject(
-            "********************SENDING EMAIL ERROR: Failed to create access token :(*********************"
-          );
-        }
-        resolve(token);
-      });
-    });
-
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: process.env.EMAIL_ADDRESS,
-        pass: process.env.EMAIL_PASSWORD,
-        accessToken,
-        clientId: process.env.EMAIL_CLIENT_ID,
-        clientSecret: process.env.EMAIL_CLIENT_SECRET,
-        refreshToken: process.env.EMAIL_REFRESH_TOKEN,
+    const msg = {
+      from: {
+        email: process.env.EMAIL_ADDRESS_DOMAIN,
       },
-    });
+      replyTo: {
+        email: process.env.EMAIL_ADDRESS,
+        name: "Example Customer Service Team",
+      },
+      subject: title,
+      personalizations: [
+        {
+          to: [
+            {
+              email: email,
+            },
+          ],
+          dynamic_template_data: {
+            order: order,
+            status: status,
+            link: link,
+            message: message,
+            salutation: salutaion,
+            signage: signage,
+          },
+        },
+      ],
+      template_id: templateId,
+    };
+
+    await mail
+      .send(msg)
+      .then(() => {
+        console.log("Email sent");
+      })
+      .catch((error) => {
+        console.error(error);
+        return err;
+      });
   } catch (err) {
     console.log(err);
+    return err;
   }
 };
 
-const sendTemplateEmail = async (email, title, message) => {
-  try {
-    const transporter = await getTransponder();
-
-    ejs.renderFile(
-      __dirname + "/templates/welcome.ejs",
-      { receiver: email, content: message },
-      (err, data) => {
-        if (err) return console.log(err);
-
-        const mailOptions = {
-          from: "straightupbourbon@gmail.com",
-          to: email,
-          subject: title,
-          text: message,
-          html: data,
-        };
-
-        console.log("sending email");
-
-        transporter.sendMail(mailOptions, (err, response) => {
-          if (err) {
-            return console.log("error: ", err);
-          }
-          console.log("success: ", response);
-        });
-      }
-    );
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.sendTemplateEmail = sendTemplateEmail;
+exports.sendGridEmail = sendGridEmail;

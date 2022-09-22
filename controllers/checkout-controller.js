@@ -20,7 +20,7 @@ const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 
 //middleware
 const getSession = require("../middleware/get-session");
-const { sendEmail } = require("../utils/email");
+const { sendGridEmail } = require("../utils/email");
 const { createLabel } = require("../utils/package");
 const { getShippingRates } = require("../utils/rules");
 
@@ -386,28 +386,53 @@ const validateAddress = async (session, order) => {
       const titleMeta = Meta.findOne({
         where: { path: "Invalid Address", type: "email_title" },
       });
+
       const emailMeta = Meta.findOne({
         where: { path: "Invalid Address", type: "email_message" },
+      });
+
+      const templateMeta = Meta.findOne({
+        where: { path: "Invalid Address", type: "email_template" },
       });
 
       const salutationMeta = Meta.findOne({
         where: { path: "*", type: "email_salutation" },
       });
 
+      const signageMeta = Meta.findOne({
+        where: { path: "*", type: "email_signage" },
+      });
+
       let title = "Invalid Address";
 
+      let templateId = "d-4a4687d326b8416faa466e2c0619e252";
+
       let message =
-        "Your recent order used an invalid address. \n\nIf our system has made a mistake and this is a valid address, we are sorry for the inconvenience. \n\nEither way please send us the correct Address along with the order Id in the title above. Send to: straightupbourbon@gmail.com";
+        "Your recent order used an invalid address. If our system has made a mistake and this is a valid address, we are sorry for the inconvenience. Either way please send us the correct Address along with the order Id in the title above. Send to: straightupbourbon@gmail.com";
 
-      let salutation = "\n\nThanks!\n\nLuke & JP";
+      let salutation = "Thanks!";
 
+      let signage = "Luke & JP";
+
+      if (templateMeta?.message) templateId = templateMeta?.message;
       if (titleMeta?.message) title = titleMeta.message;
       if (emailMeta?.message) message = emailMeta?.message;
       if (salutationMeta?.message) salutation = salutationMeta?.message;
+      if (signageMeta?.message) signage = signageMeta?.message;
 
       title += ` (Order #${order.id})`;
-      message += salutation;
-      sendEmail(session.customer_details.email, title, message);
+
+      sendGridEmail(
+        templateId,
+        session.customer_details.email,
+        title,
+        order.id,
+        "- Invalid Address",
+        message,
+        null,
+        salutation,
+        signage
+      );
     });
   } catch (err) {
     console.log(err);
