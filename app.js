@@ -67,10 +67,13 @@ app.set("views", path.join(__dirname, "./utils"));
 
 app.get("/test/email/welcome", (req, res) => {
   res.render("templates/tracking", {
-    receiver: "nick",
-    content: "TEST",
-    image:
-      "https://straightupbourbon.com/static/media/logo_background_resize.47c67434.jpg",
+    meta: {
+      receiver: "nick",
+      message: "TEST",
+      orderNumber: "TEST",
+      title: "Track your order",
+      status: " has been shipped!",
+    },
   });
 });
 
