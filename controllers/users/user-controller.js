@@ -2,6 +2,7 @@ require("dotenv");
 const router = require("express").Router();
 const User = require("../../db").user;
 const CustomerOrders = require("../../db").customerOrders;
+const Meta = require("../db").meta;
 
 //security
 const jwt = require("jsonwebtoken");
