@@ -28,6 +28,8 @@ const cloudinary = require("./controllers/cloudinary-controller");
 const youtube = require("./controllers/video-controller");
 const tracking = require("./controllers/orders/tracking-controller");
 const expressBasicAuth = require("express-basic-auth");
+const { sendTemplateEmail } = require("./utils/email");
+const e = require("express");
 
 //headers
 app.use(require("./middleware/headers"));
@@ -51,6 +53,12 @@ app.use(
 
 app.get("/test", (req, res) => {
   res.send("Bourbon test");
+});
+
+app.post("/test/email", (req, res) => {
+  const { email, title, message } = req.body;
+  sendTemplateEmail(email, title, message);
+  res.send("sent email");
 });
 
 app.use(express.static("public"));
