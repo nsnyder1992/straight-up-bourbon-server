@@ -61,6 +61,12 @@ app.post("/test/email", (req, res) => {
   res.send("sent email");
 });
 
+app.set("view engine", "ejs");
+
+app.get("test/email", (req, res) => {
+  res.render("utils/templates/welcome");
+});
+
 app.use(express.static("public"));
 
 ////////////////////////////////////////////////

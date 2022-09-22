@@ -21,6 +21,7 @@ const sendEmail = async (email, title, message) => {
     const accessToken = await new Promise((resolve, reject) => {
       oauth2Client.getAccessToken((err, token) => {
         if (err) {
+          console.log(err);
           reject(
             "********************SENDING EMAIL ERROR: Failed to create access token :(*********************"
           );
@@ -80,6 +81,7 @@ const getTransponder = async () => {
     const accessToken = await new Promise((resolve, reject) => {
       oauth2Client.getAccessToken((err, token) => {
         if (err) {
+          console.log(err);
           reject(
             "********************SENDING EMAIL ERROR: Failed to create access token :(*********************"
           );
