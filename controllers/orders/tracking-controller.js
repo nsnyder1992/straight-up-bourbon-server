@@ -300,7 +300,7 @@ const sendStatusEmail = async (orderId, email, status, statusCode) => {
       templateId,
       email,
       title,
-      order.id,
+      orderId,
       status,
       message,
       null,
