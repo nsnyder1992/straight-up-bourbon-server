@@ -118,7 +118,7 @@ const sendGridEmail = async (
       })
       .catch((error) => {
         console.error(error);
-        return err;
+        return error;
       });
   } catch (err) {
     console.log(err);
