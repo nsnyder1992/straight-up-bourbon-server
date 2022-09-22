@@ -1,5 +1,6 @@
 //environment
 require("dotenv").config();
+const path = require("path");
 
 //create an app
 const express = require("express");
@@ -62,9 +63,15 @@ app.post("/test/email", (req, res) => {
 });
 
 app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "./utils"));
 
-app.get("test/email", (req, res) => {
-  res.render("utils/templates/welcome");
+app.get("/test/email/welcome", (req, res) => {
+  res.render("templates/tracking", {
+    receiver: "nick",
+    content: "TEST",
+    image:
+      "https://straightupbourbon.com/static/media/logo_background_resize.47c67434.jpg",
+  });
 });
 
 app.use(express.static("public"));
