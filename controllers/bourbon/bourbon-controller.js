@@ -13,6 +13,7 @@ const validateSessionAdmin = require("../../middleware/validate-session-admin");
 // CREATE BOURBON
 ////////////////////////////////////////////////
 router.post("/", validateSessionAdmin, (req, res) => {
+  console.log(req.body);
   Bourbon.create({ ...req.body })
     .then(async (bourbon) => {
       res.status(200).json({ ...bourbon });

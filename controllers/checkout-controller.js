@@ -408,7 +408,7 @@ const validateAddress = async (session, order) => {
       let templateId = "d-4a4687d326b8416faa466e2c0619e252";
 
       let message =
-        "Your recent order used an invalid address. If our system has made a mistake and this is a valid address, we are sorry for the inconvenience. Either way please send us the correct Address along with the order Id in the title above. Send to: straightupbourbon@gmail.com";
+        "Your recent order used an invalid address. If our system has made a mistake and this is a valid address, we are sorry for the inconvenience. Either way please send us the correct Address along with the order Id in the title above.";
 
       let salutation = "Thanks!";
 
