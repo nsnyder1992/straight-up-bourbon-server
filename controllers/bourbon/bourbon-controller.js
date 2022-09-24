@@ -27,8 +27,21 @@ router.post("/", validateSessionAdmin, (req, res) => {
 // GET ALL BOURBONS
 //////////////////////////////////////////////////////////////////////
 router.get("/:page/:limit", async (req, res) => {
-  Bourbon.findAll()
-    .then((bourbons) => res.status(200).json({ bourbons }))
+  //setup pagination constants
+  const limit = req.params.limit;
+  const offset = (req.params.page - 1) * limit;
+
+  const query = {
+    limit: limit,
+    offset: offset,
+    order: [["createdAt", "ASC"]],
+  };
+
+  //get total number of products
+  const total = await Product.count();
+
+  Bourbon.findAll(query)
+    .then((bourbons) => res.status(200).json({ bourbons, total }))
     .catch((err) => res.status(500).json({ err: err }));
 });
 

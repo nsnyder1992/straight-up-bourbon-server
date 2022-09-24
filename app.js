@@ -13,9 +13,6 @@ const db = require("./db");
 db.createAssoc(); //create associations
 db.sync(); //sync each table in order
 
-//test email
-const { sendGridEmail } = require("./utils/email");
-
 //controllers
 const user = require("./controllers/users/user-controller");
 const product = require("./controllers/products/product-controller");
