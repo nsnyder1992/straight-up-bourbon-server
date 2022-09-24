@@ -59,7 +59,7 @@ router.get("/:id", validateSessionAdmin, (req, res) => {
 //////////////////////////////////////////////////////////////////////
 // GET PICKS OF THE WEEK
 //////////////////////////////////////////////////////////////////////
-router.get("/picks/of/the/week", validateSessionAdmin, (req, res) => {
+router.get("/selections", validateSessionAdmin, (req, res) => {
   Bourbon.findAll({
     where: { selection: { [Op.ne]: null } },
     order: [["updatedAt"], ["selection", "DESC"]],
