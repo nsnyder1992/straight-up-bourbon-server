@@ -23,12 +23,18 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 // CREATE USER
 ////////////////////////////////////////////////
 router.post("/signup", (req, res) => {
+  const template = "d-6b34ff7f582641c48bbb573b082a3e9e";
+  const verifyToken = crypto.randomBytes(20).toString("hex");
+  const verifyExpires = Date.now() + 3600000;
+
   User.create({
     email: req.body.email,
     passwordHash: bcrypt.hashSync(req.body.password, 13),
     firstName: req.body.firstName,
     lastName: req.body.lastName,
     isAdmin: false,
+    verifyToken,
+    verifyExpires,
   })
     .then(async (user) => {
       //if first user make admin

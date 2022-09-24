@@ -61,8 +61,8 @@ router.get("/:id", validateSessionAdmin, (req, res) => {
 //////////////////////////////////////////////////////////////////////
 router.get("/picks/of/the/week", validateSessionAdmin, (req, res) => {
   Bourbon.findAll({
-    where: { pickOfTheWeek: { [Op.ne]: null } },
-    order: [["updatedAt"], ["pickOfTheWeek", "DESC"]],
+    where: { selection: { [Op.ne]: null } },
+    order: [["updatedAt"], ["selection", "DESC"]],
     limit: 2,
   })
     .then((bourbons) => {

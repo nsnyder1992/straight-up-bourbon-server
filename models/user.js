@@ -27,6 +27,15 @@ module.exports = (sequelize, DataTypes) => {
     stripeCustomerId: {
       type: DataTypes.STRING,
     },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+    },
+    verifyToken: {
+      type: DataTypes.STRING,
+    },
+    verifyExpires: {
+      type: DataTypes.DATE,
+    },
   });
 
   return User;

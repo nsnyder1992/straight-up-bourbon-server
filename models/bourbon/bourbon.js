@@ -20,7 +20,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    pickOfTheWeek: {
+    link: {
+      type: DataTypes.STRING,
+    },
+    distillery: {
+      type: DataTypes.STRING,
+    },
+    year: {
+      type: DataTypes.STRING,
+    },
+    selection: {
       type: DataTypes.STRING,
     },
   });
