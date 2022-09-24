@@ -4,6 +4,10 @@ const User = require("../../db").user;
 const CustomerOrders = require("../../db").customerOrders;
 const Meta = require("../../db").meta;
 
+//sequelize
+const Sequelize = require("sequelize");
+const Op = Sequelize.Op;
+
 //security
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
@@ -23,115 +27,126 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 // CREATE USER
 ////////////////////////////////////////////////
 router.post("/signup", async (req, res) => {
-  let templateId = "d-6b34ff7f582641c48bbb573b082a3e9e";
   const verifyToken = crypto.randomBytes(20).toString("hex");
   const verifyExpires = Date.now() + 3600000;
 
-  const check = await User.findOne({ where: { email: req.body.email } });
-  if (check) {
-    return res
-      .status(500)
-      .json({ error: "User already exists. Please sign in" });
-  }
+  try {
+    const check = await User.findOne({ where: { email: req.body.email } });
+    if (check) {
+      return res
+        .status(500)
+        .json({ error: "User already exists. Please sign in" });
+    }
 
-  User.create({
-    email: req.body.email,
-    passwordHash: bcrypt.hashSync(req.body.password, 13),
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    isAdmin: false,
-    verifyToken,
-    verifyExpires,
-  })
-    .then(async (user) => {
-      //if first user make admin
-      if (user.id === 1) {
-        await User.update({ isAdmin: true }, { where: { id: 1 } })
-          .then((firstUser) => (user.isAdmin = true))
-          .catch((err) => console.log(err));
-      }
+    User.create({
+      email: req.body.email,
+      passwordHash: bcrypt.hashSync(req.body.password, 13),
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      isAdmin: false,
+      verifyToken,
+      verifyExpires,
+    })
+      .then(async (user) => {
+        //if first user make admin
+        if (user.id === 1) {
+          await User.update({ isAdmin: true }, { where: { id: 1 } })
+            .then((firstUser) => (user.isAdmin = true))
+            .catch((err) => console.log(err));
+        }
 
-      const customer = await stripe.customers.create({
-        email: req.body.email,
-      });
+        const customer = await stripe.customers.create({
+          email: req.body.email,
+        });
 
-      await User.update(
-        { stripeCustomerId: customer.id },
-        { where: { id: user.id } }
-      );
-
-      if (user.isVerified) {
-        //sign in user
-        let token = jwt.sign(
-          { id: user.id, email: user.email },
-          process.env.JWT_SECRET,
-          { expiresIn: 60 * 60 * 24 }
+        await User.update(
+          { stripeCustomerId: customer.id },
+          { where: { id: user.id } }
         );
 
-        return res.status(200).json({
+        if (user.isVerified) {
+          //sign in user
+          let token = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: 60 * 60 * 24 }
+          );
+
+          return res.status(200).json({
+            user: user,
+            message: "User successfully created",
+            sessionToken: token,
+          });
+        }
+
+        sendVerify(user.email, verifyToken);
+
+        res.status(200).json({
           user: user,
           message: "User successfully created",
-          sessionToken: token,
         });
-      }
-      const titleMeta = Meta.findOne({
-        where: { path: "Verify-Email", type: "email_title" },
+      })
+
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({ error: err });
       });
-
-      const emailMeta = Meta.findOne({
-        where: { path: "Verify-Email", type: "email_message" },
-      });
-
-      const templateMeta = Meta.findOne({
-        where: { path: "Verify-Email", type: "email_template" },
-      });
-
-      const salutationMeta = Meta.findOne({
-        where: { path: "*", type: "email_salutation" },
-      });
-
-      const signageMeta = Meta.findOne({
-        where: { path: "*", type: "email_signage" },
-      });
-
-      let title = "Verify Email";
-
-      let message =
-        "Thanks for becoming a Straight Up Bourbon User. Please click the link below to verify your email, then login!";
-
-      let salutation = "Thanks!";
-
-      let signage = "Luke & JP";
-
-      if (templateMeta?.message) templateId = templateMeta?.message;
-      if (titleMeta?.message) title = titleMeta.message;
-      if (emailMeta?.message) message = emailMeta?.message;
-      if (salutationMeta?.message) salutation = salutationMeta?.message;
-      if (signageMeta?.message) signage = signageMeta?.message;
-
-      sendGridEmail(
-        templateId,
-        user.email,
-        title,
-        null,
-        null,
-        message,
-        `${process.env.CLIENT_HOST}/verify/${verifyToken}`,
-        salutation,
-        signage
-      );
-
-      res.status(200).json({
-        user: user,
-        message: "User successfully created",
-      });
-    })
-
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: err });
-    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err });
+  }
 });
+
+const sendVerify = (email, verifyToken) => {
+  let templateId = "d-6b34ff7f582641c48bbb573b082a3e9e";
+
+  const titleMeta = Meta.findOne({
+    where: { path: "Verify-Email", type: "email_title" },
+  });
+
+  const emailMeta = Meta.findOne({
+    where: { path: "Verify-Email", type: "email_message" },
+  });
+
+  const templateMeta = Meta.findOne({
+    where: { path: "Verify-Email", type: "email_template" },
+  });
+
+  const salutationMeta = Meta.findOne({
+    where: { path: "*", type: "email_salutation" },
+  });
+
+  const signageMeta = Meta.findOne({
+    where: { path: "*", type: "email_signage" },
+  });
+
+  let title = "Verify Email";
+
+  let message =
+    "Thanks for becoming a Straight Up Bourbon User. Please click the link below to verify your email, then login!";
+
+  let salutation = "Thanks!";
+
+  let signage = "Luke & JP";
+
+  if (templateMeta?.message) templateId = templateMeta?.message;
+  if (titleMeta?.message) title = titleMeta.message;
+  if (emailMeta?.message) message = emailMeta?.message;
+  if (salutationMeta?.message) salutation = salutationMeta?.message;
+  if (signageMeta?.message) signage = signageMeta?.message;
+
+  sendGridEmail(
+    templateId,
+    email,
+    title,
+    null,
+    null,
+    message,
+    `${process.env.CLIENT_HOST}/verify/${verifyToken}`,
+    salutation,
+    signage
+  );
+};
 
 ////////////////////////////////////////////////
 // LOGIN USER
@@ -179,16 +194,19 @@ router.post("/login", function (req, res) {
 });
 
 ////////////////////////////////////////////////
-// LOGIN USER
+// VERIFY USER
 ////////////////////////////////////////////////
 router.post("/verify", function (req, res) {
   User.findOne({
     where: {
       verifyToken: req.body.verifyToken,
+      verifyExpires: {
+        [Op.gt]: Date.now(),
+      },
     },
   })
     .then((user) => {
-      if (!user) return res.status(500).json({ error: "User does not exist." });
+      if (!user) return res.status(500).json({ error: "Token Expired." });
 
       if (user.isVerified)
         return res.status(500).json({ error: "User already verified." });
@@ -196,6 +214,36 @@ router.post("/verify", function (req, res) {
       user.update({ isVerified: true, verifyToken: null, verifyExpires: null });
 
       res.status(200).status({ message: "User Verified Please Login." });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Opps, Something went wrong :(" });
+    });
+});
+
+////////////////////////////////////////////////
+// VERIFY USER
+////////////////////////////////////////////////
+router.post("/verify/resend", function (req, res) {
+  User.findOne({
+    where: {
+      verifyToken: req.body.verifyToken,
+    },
+  })
+    .then((user) => {
+      if (!user) return res.status(500).json({ error: "User Does Not Exist." });
+
+      if (user.isVerified)
+        return res.status(500).json({ error: "User already verified." });
+
+      const verifyToken = crypto.randomBytes(20).toString("hex");
+      const verifyExpires = Date.now() + 3600000;
+
+      user.update({ verifyToken, verifyExpires });
+
+      sendVerify(user.email, verifyToken);
+
+      res.status(200).status({ message: "Verify Resent." });
     })
     .catch((err) => {
       console.log(err);
@@ -284,9 +332,9 @@ router.put("/updatePasswordViaEmail", async (req, res) => {
   const user = await User.findOne({
     where: {
       resetPasswordToken: req.body.resetPasswordToken,
-      // resetPasswordExpires: {
-      //   $gt: Date.now(),
-      // },
+      resetPasswordExpires: {
+        [Op.gt]: Date.now(),
+      },
     },
   }).catch((err) => console.log(err));
 
