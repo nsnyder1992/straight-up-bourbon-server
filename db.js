@@ -43,6 +43,7 @@ db.sequelize = sequelize;
 
 //models
 db.user = sequelize.import("./models/user");
+db.bourbon = sequelize.import("./models/bourbon/bourbon");
 db.product = sequelize.import("./models/product/product");
 db.stock = sequelize.import("./models/product/product-stock");
 db.descriptions = sequelize.import("./models/product/product-descriptions");
@@ -108,6 +109,7 @@ const syncDB = async () => {
   await db.icons.sync();
   await db.rate.sync();
   await db.rules.sync();
+  await db.bourbon.sync();
 
   //the rest of the table
   await db.sequelize.sync();

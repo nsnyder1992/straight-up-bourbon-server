@@ -33,9 +33,8 @@ const createLabel = async (session, order) => {
     console.log("SHIP TO: ", shipTo);
     console.log("SHIP FROM: ", shipFrom);
 
-    const body = JSON.stringify({
+    const request = {
       shipment: {
-        label_image_id: process.env.SHIP_IMAGE,
         carrier_code: order.carrierCode,
         service_code: order.carrierService,
         ship_to: shipTo,
@@ -46,7 +45,11 @@ const createLabel = async (session, order) => {
           },
         ],
       },
-    });
+    };
+
+    if (process.env.SHIP_IMAGE) request.label_image_id = process.env.SHIP_IMAGE;
+
+    const body = JSON.stringify(request);
 
     var options = {
       method: "POST",

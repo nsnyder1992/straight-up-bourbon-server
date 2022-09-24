@@ -27,6 +27,7 @@ const meta = require("./controllers/meta/meta-controller");
 const icons = require("./controllers/meta/icon-controller");
 const rate = require("./controllers/meta/rate-controller");
 const rules = require("./controllers/meta/rate-rule-controller");
+const bourbon = require("./controllers/orders/bourbon-controller");
 
 //aux controllers
 const checkout = require("./controllers/checkout-controller");
@@ -72,6 +73,7 @@ app.use("/meta", meta);
 app.use("/icon", icons);
 app.use("/rate", rate);
 app.use("/rate/rule", rules);
+app.use("/bourbon", bourbon);
 
 app.use(
   "/track/webhook",
