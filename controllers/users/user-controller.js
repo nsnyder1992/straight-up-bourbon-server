@@ -205,15 +205,19 @@ router.post("/verify", function (req, res) {
       },
     },
   })
-    .then((user) => {
+    .then(async (user) => {
       if (!user) return res.status(500).json({ error: "Token Expired." });
 
       if (user.isVerified)
         return res.status(500).json({ error: "User already verified." });
 
-      user.update({ isVerified: true, verifyToken: null, verifyExpires: null });
+      await user.update({
+        isVerified: true,
+        verifyToken: null,
+        verifyExpires: null,
+      });
 
-      res.status(200).status({ message: "User Verified Please Login." });
+      res.status(200).json({ message: "User Verified Please Login." });
     })
     .catch((err) => {
       console.log(err);
@@ -230,7 +234,7 @@ router.post("/verify/resend", function (req, res) {
       verifyToken: req.body.verifyToken,
     },
   })
-    .then((user) => {
+    .then(async (user) => {
       if (!user) return res.status(500).json({ error: "User Does Not Exist." });
 
       if (user.isVerified)
@@ -239,11 +243,11 @@ router.post("/verify/resend", function (req, res) {
       const verifyToken = crypto.randomBytes(20).toString("hex");
       const verifyExpires = Date.now() + 3600000;
 
-      user.update({ verifyToken, verifyExpires });
+      await user.update({ verifyToken, verifyExpires });
 
-      sendVerify(user.email, verifyToken);
+      await sendVerify(user.email, verifyToken);
 
-      res.status(200).status({ message: "Verify Resent." });
+      res.status(200).json({ message: "Verify Resent." });
     })
     .catch((err) => {
       console.log(err);
