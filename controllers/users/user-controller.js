@@ -22,10 +22,17 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 ////////////////////////////////////////////////
 // CREATE USER
 ////////////////////////////////////////////////
-router.post("/signup", (req, res) => {
-  const template = "d-6b34ff7f582641c48bbb573b082a3e9e";
+router.post("/signup", async (req, res) => {
+  let templateId = "d-6b34ff7f582641c48bbb573b082a3e9e";
   const verifyToken = crypto.randomBytes(20).toString("hex");
   const verifyExpires = Date.now() + 3600000;
+
+  const check = await User.findOne({ where: { email: req.body.email } });
+  if (check) {
+    return res
+      .status(500)
+      .json({ error: "User already exists. Please sign in" });
+  }
 
   User.create({
     email: req.body.email,
@@ -53,17 +60,70 @@ router.post("/signup", (req, res) => {
         { where: { id: user.id } }
       );
 
-      //sign in user
-      let token = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: 60 * 60 * 24 }
+      if (user.isVerified) {
+        //sign in user
+        let token = jwt.sign(
+          { id: user.id, email: user.email },
+          process.env.JWT_SECRET,
+          { expiresIn: 60 * 60 * 24 }
+        );
+
+        return res.status(200).json({
+          user: user,
+          message: "User successfully created",
+          sessionToken: token,
+        });
+      }
+      const titleMeta = Meta.findOne({
+        where: { path: "Verify-Email", type: "email_title" },
+      });
+
+      const emailMeta = Meta.findOne({
+        where: { path: "Verify-Email", type: "email_message" },
+      });
+
+      const templateMeta = Meta.findOne({
+        where: { path: "Verify-Email", type: "email_template" },
+      });
+
+      const salutationMeta = Meta.findOne({
+        where: { path: "*", type: "email_salutation" },
+      });
+
+      const signageMeta = Meta.findOne({
+        where: { path: "*", type: "email_signage" },
+      });
+
+      let title = "Verify Email";
+
+      let message =
+        "Thanks for becoming a Straight Up Bourbon User. Please click the link below to verify your email, then login!";
+
+      let salutation = "Thanks!";
+
+      let signage = "Luke & JP";
+
+      if (templateMeta?.message) templateId = templateMeta?.message;
+      if (titleMeta?.message) title = titleMeta.message;
+      if (emailMeta?.message) message = emailMeta?.message;
+      if (salutationMeta?.message) salutation = salutationMeta?.message;
+      if (signageMeta?.message) signage = signageMeta?.message;
+
+      sendGridEmail(
+        templateId,
+        user.email,
+        title,
+        null,
+        null,
+        message,
+        `${process.env.CLIENT_HOST}/verify/${verifyToken}`,
+        salutation,
+        signage
       );
 
       res.status(200).json({
         user: user,
         message: "User successfully created",
-        sessionToken: token,
       });
     })
 
@@ -83,31 +143,59 @@ router.post("/login", function (req, res) {
     },
   })
     .then((user) => {
-      if (user) {
-        bcrypt.compare(
-          req.body.password,
-          user.passwordHash,
-          function (err, matches) {
-            if (matches) {
-              let token = jwt.sign(
-                { id: user.id, email: user.email },
-                process.env.JWT_SECRET,
-                { expiresIn: 60 * 60 * 24 }
-              );
+      if (!user) return res.status(500).json({ error: "User does not exist." });
+      bcrypt.compare(
+        req.body.password,
+        user.passwordHash,
+        function (err, matches) {
+          if (!matches)
+            return res
+              .status(502)
+              .send({ error: "Username or Password Incorrect" });
 
-              res.status(200).json({
-                user: user,
-                message: "User successfully Logged in",
-                sessionToken: token,
-              });
-            } else {
-              res.status(502).send({ error: "Username or Password Incorrect" });
-            }
-          }
-        );
-      } else {
-        res.status(500).json({ error: "User does not exist." });
-      }
+          if (!user.isVerified)
+            return res.status(500).json({
+              error: "Please verify email then come back and log in",
+            });
+
+          let token = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: 60 * 60 * 24 }
+          );
+
+          res.status(200).json({
+            user: user,
+            message: "User successfully Logged in",
+            sessionToken: token,
+          });
+        }
+      );
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "Opps, Something went wrong :(" });
+    });
+});
+
+////////////////////////////////////////////////
+// LOGIN USER
+////////////////////////////////////////////////
+router.post("/verify", function (req, res) {
+  User.findOne({
+    where: {
+      verifyToken: req.body.verifyToken,
+    },
+  })
+    .then((user) => {
+      if (!user) return res.status(500).json({ error: "User does not exist." });
+
+      if (user.isVerified)
+        return res.status(500).json({ error: "User already verified." });
+
+      user.update({ isVerified: true, verifyToken: null, verifyExpires: null });
+
+      res.status(200).status({ message: "User Verified Please Login." });
     })
     .catch((err) => {
       console.log(err);
