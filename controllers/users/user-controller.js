@@ -325,6 +325,8 @@ router.post("/forgotPassword", (req, res) => {
         salutation,
         signage
       );
+
+      res.status(200).json({ message: "Sent Recovery Email" });
     }
   });
 });
@@ -333,46 +335,50 @@ router.post("/forgotPassword", (req, res) => {
 // UPDATE PASSWORD VIA EMAILED TOKEN
 ////////////////////////////////////////////////
 router.put("/updatePasswordViaEmail", async (req, res) => {
-  const user = await User.findOne({
-    where: {
-      resetPasswordToken: req.body.resetPasswordToken,
-      resetPasswordExpires: {
-        [Op.gt]: Date.now(),
+  try {
+    const user = await User.findOne({
+      where: {
+        resetPasswordToken: req.body.resetPasswordToken,
+        resetPasswordExpires: {
+          [Op.gt]: Date.now(),
+        },
       },
-    },
-  }).catch((err) => console.log(err));
-
-  if (user === null)
-    return res
-      .status(404)
-      .json({ message: "password reset link is invalid or has expired" });
-
-  console.log("user exists in db");
-
-  await user
-    .update({
-      passwordHash: bcrypt.hashSync(req.body.password, 13),
-      resetPasswordToken: null,
-      resetPasswordExpires: null,
-    })
-    .then(() => {
-      console.log("Password Updated!");
-
-      //sign in user
-      let token = jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: 60 * 60 * 24 }
-      );
-
-      res
-        .status(200)
-        .json({ message: "Password Updated!", sessionToken: token, user });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: "Something went wrong :(" });
     });
+
+    if (user === null)
+      return res
+        .status(403)
+        .json({ message: "password reset link is invalid or has expired" });
+
+    console.log("user exists in db");
+
+    await user
+      .update({
+        passwordHash: bcrypt.hashSync(req.body.password, 13),
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      })
+      .then(() => {
+        console.log("Password Updated!");
+
+        //sign in user
+        let token = jwt.sign(
+          { id: user.id, email: user.email },
+          process.env.JWT_SECRET,
+          { expiresIn: 60 * 60 * 24 }
+        );
+
+        res
+          .status(200)
+          .json({ message: "Password Updated!", sessionToken: token, user });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({ error: "Something went wrong :(" });
+      });
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 //////////////////////////////////////////////////////////////////////
