@@ -39,7 +39,7 @@ router.get("/:page/:limit", async (req, res) => {
   };
 
   //get total number of products
-  const total = await Product.count();
+  const total = await Bourbon.count();
 
   Bourbon.findAll(query)
     .then((bourbons) => res.status(200).json({ bourbons, total }))
