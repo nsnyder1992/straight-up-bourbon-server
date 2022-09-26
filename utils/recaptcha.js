@@ -17,4 +17,4 @@ const isRobot = async (token) => {
   }
 };
 
-exports.trackPackage = trackPackage;
+exports.isRobot = isRobot;
