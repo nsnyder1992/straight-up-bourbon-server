@@ -14,6 +14,7 @@ router.post("/", async (req, res) => {
       url: `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
       method: "POST",
     });
+    console.log(response);
 
     if (response.statusCode != 200)
       return res.status(403).json({ err: "We think you are a Robot" });
