@@ -92,7 +92,16 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
 
     await bourbon.update(update);
 
-    res.status(200).json({ ...bourbon });
+    res.status(200).json({
+      name: bourbon.name,
+      description: bourbon.description,
+      aroma: bourbon.aroma,
+      taste: bourbon.taste,
+      link: bourbon.link,
+      distillery: bourbon.distillery,
+      year: bourbon.year,
+      selection: bourbon.selection,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ err: err });
