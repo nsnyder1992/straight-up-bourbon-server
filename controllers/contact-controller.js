@@ -11,10 +11,9 @@ router.post("/", async (req, res) => {
   try {
     const { name, message, token } = req.body;
 
-    const isRobot = await isRobot(token);
+    const robot = await isRobot(token);
 
-    if (isRobot)
-      return res.status(403).json({ err: "We think you are a Robot" });
+    if (robot) return res.status(403).json({ err: "We think you are a Robot" });
 
     await sendGridEmail(
       "d-299735bd59304e10815c3cec363c793e",
