@@ -2,6 +2,7 @@ require("dotenv");
 const router = require("express").Router();
 const request = require("request-promise");
 const { sendGridEmail } = require("../utils/email");
+const { isRobot } = require("../utils/recaptcha");
 
 ////////////////////////////////////////////////
 // CONTACT US
@@ -10,14 +11,9 @@ router.post("/", async (req, res) => {
   try {
     const { name, message, token } = req.body;
 
-    const response = await request({
-      url: `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
-      method: "POST",
-      resolveWithFullResponse: true,
-    });
-    console.log(response);
+    const isRobot = await isRobot(token);
 
-    if (response.statusCode != 200)
+    if (isRobot)
       return res.status(403).json({ err: "We think you are a Robot" });
 
     await sendGridEmail(
