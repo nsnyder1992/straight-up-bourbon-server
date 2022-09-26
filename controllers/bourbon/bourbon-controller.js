@@ -30,8 +30,10 @@ router.post("/", validateSessionAdmin, (req, res) => {
 router.get("/selections", (req, res) => {
   Bourbon.findAll({
     where: { selection: { [Op.ne]: null } },
-    order: [["updatedAt"], ["selection", "DESC"]],
-    limit: 2,
+    order: [
+      ["updatedAt", "DESC"],
+      ["selection", "DESC"],
+    ],
   })
     .then((bourbons) => {
       res.status(200).json({ bourbons });
