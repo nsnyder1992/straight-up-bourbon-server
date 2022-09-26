@@ -32,6 +32,7 @@ const checkout = require("./controllers/checkout-controller");
 const cloudinary = require("./controllers/cloudinary-controller");
 const youtube = require("./controllers/video-controller");
 const tracking = require("./controllers/orders/tracking-controller");
+const contact = require("./controllers/contact-controller");
 
 //headers
 app.use(require("./middleware/headers"));
@@ -73,6 +74,7 @@ app.use("/image", images);
 app.use("/rate", rate);
 app.use("/rate/rule", rules);
 app.use("/bourbon", bourbon);
+app.use("/contact", contact);
 
 app.use(
   "/track/webhook",
