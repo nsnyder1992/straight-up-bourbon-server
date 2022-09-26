@@ -38,3 +38,5 @@ router.post("/", async (req, res) => {
       .json({ err: "Opps Something went wrong on our end. Check back latter" });
   }
 });
+
+module.exports = router;
