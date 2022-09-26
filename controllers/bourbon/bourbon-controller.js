@@ -77,6 +77,7 @@ router.get("/:id", validateSessionAdmin, (req, res) => {
 //////////////////////////////////////////////////////////////////////
 router.put("/:id", validateSessionAdmin, async (req, res) => {
   try {
+    console.log(req.body);
     const bourbon = await Bourbon.findOne({ where: { id: req.params.id } });
 
     await bourbon.update({ ...req.body });
