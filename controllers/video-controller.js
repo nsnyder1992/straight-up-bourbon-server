@@ -22,7 +22,9 @@ router.get("/videos", (req, res) => {
       const videos = JSON.parse(response);
       res.status(200).json(videos);
     })
-    .catch(() => {});
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
 ////////////////////////////////////////////////
@@ -41,7 +43,9 @@ router.get("/videos/page/:id", (req, res) => {
       const videos = JSON.parse(response);
       res.status(200).json(videos);
     })
-    .catch(() => {});
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
 ////////////////////////////////////////////////
