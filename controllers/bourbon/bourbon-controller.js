@@ -25,6 +25,21 @@ router.post("/", validateSessionAdmin, (req, res) => {
 });
 
 //////////////////////////////////////////////////////////////////////
+// GET SELECTIONS
+//////////////////////////////////////////////////////////////////////
+router.get("/selections", (req, res) => {
+  Bourbon.findAll({
+    where: { selection: { [Op.ne]: null } },
+    order: [["updatedAt"], ["selection", "DESC"]],
+    limit: 2,
+  })
+    .then((bourbons) => {
+      res.status(200).json({ bourbons });
+    })
+    .catch((err) => res.status(500).json({ err: err }));
+});
+
+//////////////////////////////////////////////////////////////////////
 // GET ALL BOURBONS
 //////////////////////////////////////////////////////////////////////
 router.get("/:page/:limit", async (req, res) => {
@@ -53,21 +68,6 @@ router.get("/:id", validateSessionAdmin, (req, res) => {
   Bourbon.findOne({ where: { id: req.params.id } })
     .then((bourbon) => {
       res.status(200).json({ ...bourbon });
-    })
-    .catch((err) => res.status(500).json({ err: err }));
-});
-
-//////////////////////////////////////////////////////////////////////
-// GET SELECTIONS
-//////////////////////////////////////////////////////////////////////
-router.get("/by/selections", (req, res) => {
-  Bourbon.findAll({
-    where: { selection: { [Op.ne]: null } },
-    order: [["updatedAt"], ["selection", "DESC"]],
-    limit: 2,
-  })
-    .then((bourbons) => {
-      res.status(200).json({ bourbons });
     })
     .catch((err) => res.status(500).json({ err: err }));
 });
