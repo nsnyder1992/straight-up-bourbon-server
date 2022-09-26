@@ -1,23 +1,25 @@
 require("dotenv");
 const router = require("express").Router();
-const Bourbon = require("../../db").bourbon;
-
-//special db operators
-const Sequelize = require("sequelize");
-const Op = Sequelize.Op;
+const Image = require("../../db").images;
 
 //auth
 const validateSessionAdmin = require("../../middleware/validate-session-admin");
 
 ////////////////////////////////////////////////
-// CREATE BOURBON
+// CREATE IMAGE
 ////////////////////////////////////////////////
 router.post("/", validateSessionAdmin, (req, res) => {
-  console.log(req.body);
-  Bourbon.create({ ...req.body })
-    .then(async (bourbon) => {
-      res.status(200).json({ ...bourbon });
+  Image.create({
+    name: req.body.name,
+    url: req.body.url,
+  })
+    .then(async (image) => {
+      res.status(200).json({
+        image,
+        message: "Image successfully created",
+      });
     })
+
     .catch((err) => {
       console.log(err);
       res.status(500).json({ error: err });
@@ -25,7 +27,7 @@ router.post("/", validateSessionAdmin, (req, res) => {
 });
 
 //////////////////////////////////////////////////////////////////////
-// GET ALL BOURBONS
+// GET ALL IMAGES
 //////////////////////////////////////////////////////////////////////
 router.get("/:page/:limit", async (req, res) => {
   //setup pagination constants
@@ -39,50 +41,43 @@ router.get("/:page/:limit", async (req, res) => {
   };
 
   //get total number of products
-  const total = await Bourbon.count();
+  const total = await Image.count();
 
-  Bourbon.findAll(query)
-    .then((bourbons) => res.status(200).json({ bourbons, total }))
+  Image.findAll(query)
+    .then((images) => res.status(200).json({ images, total }))
     .catch((err) => res.status(500).json({ err: err }));
 });
 
 //////////////////////////////////////////////////////////////////////
-// GET BOURBON BY ID
+// GET IMAGE BY ID
 //////////////////////////////////////////////////////////////////////
 router.get("/:id", validateSessionAdmin, (req, res) => {
-  Bourbon.findOne({ where: { id: req.params.id } })
-    .then((bourbon) => {
-      res.status(200).json({ ...bourbon });
+  Image.findOne({ where: { id: req.params.id } })
+    .then((image) => {
+      res.status(200).json({
+        name: image.name,
+        url: image.url,
+      });
     })
     .catch((err) => res.status(500).json({ err: err }));
 });
 
 //////////////////////////////////////////////////////////////////////
-// GET SELECTIONS
-//////////////////////////////////////////////////////////////////////
-router.get("/selections", validateSessionAdmin, (req, res) => {
-  Bourbon.findAll({
-    where: { selection: { [Op.ne]: null } },
-    order: [["updatedAt"], ["selection", "DESC"]],
-    limit: 2,
-  })
-    .then((bourbons) => {
-      res.status(200).json({ bourbons });
-    })
-    .catch((err) => res.status(500).json({ err: err }));
-});
-
-//////////////////////////////////////////////////////////////////////
-// UPDATE BOURBON
+// UPDATE IMAGE
 //////////////////////////////////////////////////////////////////////
 router.put("/:id", validateSessionAdmin, async (req, res) => {
   try {
-    console.log(req.body);
-    const bourbon = await Bourbon.findOne({ where: { id: req.params.id } });
+    const image = await Image.findOne({ where: { id: req.params.id } });
 
-    await bourbon.update({ ...req.body });
+    await image.update({
+      name: req.body.name,
+      url: req.body.url,
+    });
 
-    res.status(200).json({ ...bourbon });
+    res.status(200).json({
+      name: image.name,
+      url: image.url,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ err: err });
@@ -90,13 +85,13 @@ router.put("/:id", validateSessionAdmin, async (req, res) => {
 });
 
 //////////////////////////////////////////////////////////////////////
-// DELETE BOURBON
+// DELETE IMAGE
 //////////////////////////////////////////////////////////////////////
 router.delete("/:id", validateSessionAdmin, async (req, res) => {
   try {
-    await Bourbon.destroy({ where: { id: req.params.id } });
+    await Image.destroy({ where: { id: req.user.id } });
 
-    res.status(200).json({ message: "Bourbon Removed" });
+    res.status(200).json({ message: "Image Removed" });
   } catch (err) {
     res.status(500).json({ err: err });
   }

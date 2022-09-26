@@ -50,6 +50,7 @@ db.descriptions = sequelize.import("./models/product/product-descriptions");
 db.orders = sequelize.import("./models/order/orders");
 db.meta = sequelize.import("./models/meta/meta");
 db.icons = sequelize.import("./models/meta/icons");
+db.images = sequelize.import("./models/meta/images");
 db.rate = sequelize.import("./models/meta/rate");
 db.rules = sequelize.import("./models/meta/rate-rules");
 
@@ -107,6 +108,7 @@ const syncDB = async () => {
   await db.customerOrders.sync();
   await db.meta.sync();
   await db.icons.sync();
+  await db.images.sync();
   await db.rate.sync();
   await db.rules.sync();
   await db.bourbon.sync();
