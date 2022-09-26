@@ -77,10 +77,20 @@ router.get("/:id", validateSessionAdmin, (req, res) => {
 //////////////////////////////////////////////////////////////////////
 router.put("/:id", validateSessionAdmin, async (req, res) => {
   try {
-    console.log(req.body);
+    const update = {
+      name: req.body.name,
+      description: req.body.description,
+      aroma: req.body.aroma,
+      taste: req.body.taste,
+      link: req.body.link,
+      distillery: req.body.distillery,
+      year: req.body.year,
+      selection: req.body.selection,
+    };
+
     const bourbon = await Bourbon.findOne({ where: { id: req.params.id } });
 
-    await bourbon.update({ ...req.body });
+    await bourbon.update(update);
 
     res.status(200).json({ ...bourbon });
   } catch (err) {
