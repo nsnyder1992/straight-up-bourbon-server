@@ -4,7 +4,7 @@ const request = require("request-promise");
 const { sendGridEmail } = require("../utils/email");
 
 ////////////////////////////////////////////////
-// YOUTUBE GET VIDEOS
+// CONTACT US
 ////////////////////////////////////////////////
 router.post("/", async (req, res) => {
   try {
@@ -13,6 +13,7 @@ router.post("/", async (req, res) => {
     const response = await request({
       url: `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
       method: "POST",
+      resolveWithFullResponse: true,
     });
     console.log(response);
 
