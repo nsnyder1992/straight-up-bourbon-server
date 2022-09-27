@@ -1,7 +1,7 @@
 require("dotenv");
 const router = require("express").Router();
 const request = require("request-promise");
-const { sendGridEmail } = require("../utils/email");
+const { sendGridEmail, sendContactUs } = require("../utils/email");
 const { isRobot } = require("../utils/recaptcha");
 
 ////////////////////////////////////////////////
@@ -15,15 +15,11 @@ router.post("/", async (req, res) => {
 
     if (robot) return res.status(403).json({ err: "We think you are a Robot" });
 
-    await sendGridEmail(
+    await sendContactUs(
       "d-299735bd59304e10815c3cec363c793e",
       email,
       "Customer Feedback",
-      null,
-      null,
       message,
-      null,
-      null,
       name
     );
 

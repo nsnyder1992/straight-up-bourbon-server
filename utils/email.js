@@ -127,3 +127,53 @@ const sendGridEmail = async (
 };
 
 exports.sendGridEmail = sendGridEmail;
+
+const sendContactUs = async (templateId, email, title, message, signage) => {
+  try {
+    mail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+      from: {
+        email: email,
+      },
+      replyTo: {
+        email: email,
+        name: "Customer Service Team",
+      },
+      subject: title,
+      personalizations: [
+        {
+          to: [
+            {
+              email: process.env.EMAIL_ADDRESS_DOMAIN,
+            },
+          ],
+          dynamic_template_data: {
+            order: order,
+            status: status,
+            link: link,
+            message: message,
+            salutation: salutaion,
+            signage: signage,
+          },
+        },
+      ],
+      template_id: templateId,
+    };
+
+    await mail
+      .send(msg)
+      .then(() => {
+        console.log("Email sent");
+      })
+      .catch((error) => {
+        console.error(error);
+        return error;
+      });
+  } catch (err) {
+    console.log(err);
+    return err;
+  }
+};
+
+exports.sendContactUs = sendContactUs;
