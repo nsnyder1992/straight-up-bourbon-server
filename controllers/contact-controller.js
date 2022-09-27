@@ -23,7 +23,11 @@ router.post("/", async (req, res) => {
       name
     );
 
-    if (response?.success) res.status(200).json({ message: "Email Sent" });
+    if (response?.success)
+      return res.status(200).json({ message: "Email Sent" });
+    res.status(500).json({
+      err: "Opps Something went wrong on our end. Check back latter",
+    });
   } catch (err) {
     console.log(err);
     res
