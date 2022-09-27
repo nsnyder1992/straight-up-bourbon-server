@@ -8,7 +8,6 @@ const isRobot = async (token) => {
       method: "POST",
       resolveWithFullResponse: true,
     });
-    console.log(response);
 
     return response.statusCode != 200;
   } catch (err) {

@@ -219,8 +219,6 @@ router.post("/verify", function (req, res) {
 
       await user.update({
         isVerified: true,
-        verifyToken: null,
-        verifyExpires: null,
       });
 
       res.status(200).json({ message: "User Verified Please Login." });
