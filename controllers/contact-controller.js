@@ -15,7 +15,7 @@ router.post("/", async (req, res) => {
 
     if (robot) return res.status(403).json({ err: "We think you are a Robot" });
 
-    await sendContactUs(
+    const response = await sendContactUs(
       "d-299735bd59304e10815c3cec363c793e",
       email,
       "Customer Feedback",
@@ -23,7 +23,7 @@ router.post("/", async (req, res) => {
       name
     );
 
-    res.status(200).json({ message: "Email Sent" });
+    if (response?.success) res.status(200).json({ message: "Email Sent" });
   } catch (err) {
     console.log(err);
     res

@@ -165,6 +165,7 @@ const sendContactUs = async (templateId, email, title, message, signage) => {
       .send(msg)
       .then(() => {
         console.log("Email sent");
+        return { success: true };
       })
       .catch((error) => {
         console.error(error);
