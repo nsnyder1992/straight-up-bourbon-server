@@ -215,7 +215,9 @@ router.post("/verify", function (req, res) {
       if (!user) return res.status(500).json({ error: "Token Expired." });
 
       if (user.isVerified)
-        return res.status(500).json({ error: "User already verified." });
+        return res
+          .status(500)
+          .json({ error: "User already verified. Please Sign In" });
 
       await user.update({
         isVerified: true,
