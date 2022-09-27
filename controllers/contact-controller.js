@@ -9,7 +9,7 @@ const { isRobot } = require("../utils/recaptcha");
 ////////////////////////////////////////////////
 router.post("/", async (req, res) => {
   try {
-    const { name, message, token } = req.body;
+    const { name, email, message, token } = req.body;
 
     const robot = await isRobot(token);
 
@@ -17,7 +17,7 @@ router.post("/", async (req, res) => {
 
     await sendGridEmail(
       "d-299735bd59304e10815c3cec363c793e",
-      process.env.EMAIL_ADDRESS,
+      email,
       "Customer Feedback",
       null,
       null,
