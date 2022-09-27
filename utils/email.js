@@ -134,10 +134,10 @@ const sendContactUs = async (templateId, email, title, message, signage) => {
 
     const msg = {
       from: {
-        email: email,
+        email: process.env.EMAIL_ADDRESS_DOMAIN,
       },
       replyTo: {
-        email: email,
+        email: process.env.EMAIL_ADDRESS,
         name: "Customer Service Team",
       },
       subject: title,
@@ -145,11 +145,11 @@ const sendContactUs = async (templateId, email, title, message, signage) => {
         {
           to: [
             {
-              email: process.env.EMAIL_ADDRESS_DOMAIN,
+              email: process.env.ADMIN_EMAIL,
             },
           ],
           dynamic_template_data: {
-            order: order,
+            email: email,
             status: status,
             link: link,
             message: message,
