@@ -149,6 +149,7 @@ const sendContactUs = async (templateId, email, title, message, signage) => {
             },
           ],
           dynamic_template_data: {
+            title: title,
             email: email,
             message: message,
             signage: signage,
