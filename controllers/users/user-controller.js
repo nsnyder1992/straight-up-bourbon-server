@@ -18,6 +18,7 @@ const validateSession = require("../../middleware/validate-session");
 const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
 const { sendGridEmail } = require("../../utils/email");
+const { isRobot } = require("../../utils/recaptcha");
 const OAuth2 = google.auth.OAuth2;
 
 //stripe
@@ -27,10 +28,14 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 // CREATE USER
 ////////////////////////////////////////////////
 router.post("/signup", async (req, res) => {
-  const verifyToken = crypto.randomBytes(20).toString("hex");
-  const verifyExpires = Date.now() + 3600000;
-
   try {
+    const verifyToken = crypto.randomBytes(20).toString("hex");
+    const verifyExpires = Date.now() + 3600000;
+
+    const robot = await isRobot(req.body.token);
+
+    if (robot) return res.status(403).json({ err: "We think you are a Robot" });
+
     const check = await User.findOne({ where: { email: req.body.email } });
     if (check) {
       return res
