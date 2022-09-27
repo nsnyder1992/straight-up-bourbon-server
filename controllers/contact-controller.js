@@ -15,6 +15,8 @@ router.post("/", async (req, res) => {
 
     if (robot) return res.status(403).json({ err: "We think you are a Robot" });
 
+    console.log("IS ROBOT:", robot);
+
     const response = await sendContactUs(
       "d-299735bd59304e10815c3cec363c793e",
       email,
@@ -23,13 +25,14 @@ router.post("/", async (req, res) => {
       name
     );
 
+    console.log("SENDGRID Response:", response);
     if (response?.success)
       return res.status(200).json({ message: "Email Sent" });
     res.status(500).json({
       err: "Opps Something went wrong on our end. Check back latter",
     });
   } catch (err) {
-    console.log(err);
+    console.log("SENDGRID ERROR:", err);
     res
       .status(500)
       .json({ err: "Opps Something went wrong on our end. Check back latter" });

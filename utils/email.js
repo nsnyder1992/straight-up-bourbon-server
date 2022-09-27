@@ -166,11 +166,11 @@ const sendContactUs = async (templateId, email, title, message, signage) => {
         return { success: true };
       })
       .catch((error) => {
-        console.error(error);
+        console.log("MAIL ERROR:", error);
         return error;
       });
   } catch (err) {
-    console.log(err);
+    console.log("MAIL SETUP ERROR:", err);
     return err;
   }
 };
