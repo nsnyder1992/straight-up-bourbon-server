@@ -237,7 +237,7 @@ const sendStatusEmail = async (orderId, email, status, statusCode) => {
           },
         });
         title = "Straight Up Bourbon Order - ";
-        status = "Error";
+        status = "Delivery Error";
         message = `Something went wrong with your delivery. Please email us and we will try to determine what happend`;
         break;
 
@@ -255,7 +255,7 @@ const sendStatusEmail = async (orderId, email, status, statusCode) => {
           },
         });
         title = "Straight Up Bourbon Order - ";
-        status = "status is unknown";
+        status = "Status Unknown";
         break;
 
       case "AT":
@@ -272,7 +272,7 @@ const sendStatusEmail = async (orderId, email, status, statusCode) => {
           },
         });
         title = "Straight Up Bourbon Order - Attempted";
-        status = "attempted delivery";
+        status = "Attempted Delivery";
         message = `A Delivery Attempt has been made, but you weren't available.`;
         break;
       default:
